@@ -1,0 +1,354 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dashboard - OLCHA Technologies</title>    <link rel="stylesheet" href="{% static 'accounts/css/styles.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'accounts/css/usuarios.css' %}">
+    <link rel="stylesheet" href="{% static 'accounts/css/insumos.css' %}">
+    <link rel="stylesheet" href="{% static 'accounts/css/notifications.css' %}">
+    <link rel="stylesheet" href="{% static 'accounts/css/menu.css' %}">
+</head>
+<body>
+    <div class="app">
+        <aside class="sidebar">
+            <div class="logo">
+                <img src="{% static 'images/logo.png' %}" alt="Logo">
+            </div>
+            <div class="menu-item active"><i class="fa-solid fa-gauge"></i> Principal</div>
+            <!-- Agrupamos el menú de inventario y su submenu en un wrapper -->
+            <div class="submenu-wrapper">
+                <div class="menu-item" id="menuInventario">
+                    <i class="fa-solid fa-warehouse"></i> Inventario
+                    <i class="fa-solid fa-chevron-down submenu-icon"></i>
+                </div>
+                <div class="submenu" id="submenuInventario">
+                    <a href="#" id="entradas_salidas"><i class="fa-solid fa-exchange-alt"></i> Entradas y salidas</a>
+                    <a href="#" id="proveedores"><i class="fa-solid fa-truck"></i> Proveedores</a>
+                    <a href="#" id="menu-insumos-link"><i class="fa-solid fa-carrot"></i> Insumos</a>
+                    <a href="#" id="insumos_compuestos"><i class="fa-solid fa-blender"></i> Insumos compuestos</a>
+                    <a href="#" id="recetas"><i class="fa-solid fa-book"></i> Recetas</a>
+                    <a href="#" id="reportes"><i class="fa-solid fa-chart-bar"></i> Reportes</a>
+                </div>
+            </div>
+            <div class="menu-item shiftable"><i class="fa-solid fa-store"></i> Productos de venta</div>
+            <div class="menu-item shiftable" id="menuSucursales"><i class="fa-solid fa-building-columns"></i> Sucursales</div>
+            <div class="menu-item shiftable"><i class="fa-solid fa-money-bill-1-wave"></i> Ventas</div>
+            <div class="menu-item shiftable"><i class="fa-solid fa-square-check"></i> Check List</div>
+            <div class="menu-item shiftable">
+                <i class="fa-solid fa-users-gear"></i> Recursos Humanos
+            </div>
+            <div class="menu-item shiftable" id="menuUsuarios"><i class="fa-solid fa-user-group"></i> Usuarios</div>
+        </aside>
+
+        <main class="main">
+            <div class="header">
+                <div class="notifications-menu">
+                    <div class="bell-wrapper">
+                        <i class="fa-solid fa-bell" id="notificationsButton"></i>
+                        <span class="notification-badge">2</span>
+                    </div>
+                    <div class="notifications-dropdown" id="notificationsDropdown">
+                        <div class="notifications-header">
+                            <h3>Notificaciones</h3>
+                            <button class="mark-all-read">
+                                <i class="fa-solid fa-check-double"></i> Marcar como leídas
+                            </button>
+                        </div>
+                        <div class="notifications-list">
+                            <!-- Las notificaciones se insertarán aquí dinámicamente -->
+                        </div>
+                        <div class="notifications-empty" style="display: none;">
+                            <i class="fa-solid fa-bell-slash"></i>
+                            <p>No hay notificaciones nuevas</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="user-menu" id="userMenu">
+                    <i class="fa-solid fa-user" id="userMenuButton" title="Usuario"></i>
+                    <div class="user-dropdown" id="userDropdown">
+                        <a href="#"><i class="fa-solid fa-chart-line"></i>Mis actividades</a>
+                        <a href="#"><i class="fa-solid fa-key"></i>Cambiar contraseña</a>
+                        <a href="#" id="logoutButton">
+                            <i class="fa-solid fa-right-from-bracket"></i>Cerrar sesión
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="main-content">
+                <h1>Resumen del día</h1>
+
+                <div class="filters">
+                    <label>Filtrar por sucursal: </label>
+                    <select id="sucursalFilter">
+                        <option>Todas</option>
+                        <option>Querétaro</option>
+                        <option>CDMX</option>
+                        <option>Puebla</option>
+                    </select>
+                </div>
+
+                <div class="cards">
+                    <div class="card">
+                        <h3>Ventas en tiempo real</h3>
+                        <div class="value">$12,480</div>
+                    </div>
+                    <div class="card">
+                        <h3>Órdenes a domicilio hoy</h3>
+                        <div class="value">48</div>
+                    </div>
+                    <div class="card">
+                        <h3>Órdenes en restaurante</h3>
+                        <div class="value">92</div>
+                    </div>
+                    <div class="card">
+                        <h3>Meta diaria alcanzada</h3>
+                        <div class="value">76%</div>
+                    </div>
+                    <div class="card">
+                        <h3>Ticket promedio</h3>
+                        <div class="value">$180.50</div>
+                    </div>
+                    <div class="card">
+                        <h3>Clientes nuevos hoy</h3>
+                        <div class="value">15</div>
+                    </div>
+                </div>
+
+                <table id="ventasTable">
+                    <thead>
+                        <tr>
+                            <th>Hora</th>
+                            <th>Sucursal</th>
+                            <th>Tipo</th>
+                            <th>Monto</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>11:05 AM</td>
+                            <td>Querétaro</td>
+                            <td>Restaurante</td>
+                            <td>$220.00</td>
+                        </tr>
+                        <tr>
+                            <td>11:12 AM</td>
+                            <td>CDMX</td>
+                            <td>Domicilio</td>
+                            <td>$140.00</td>
+                        </tr>
+                        <tr>
+                            <td>11:35 AM</td>
+                            <td>Puebla</td>
+                            <td>Restaurante</td>
+                            <td>$185.00</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <footer>
+                Sistema desarrollado por OLCHA Technologies 2025. Todos los derechos reservados.
+            </footer>
+        </main>
+    </div>
+
+    <!-- Modal para sucursales (fuera del contenido dinámico) -->
+    <div id="sucursalModal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeSucursalModal()">&times;</span>
+            <h2 id="modalTitle">Nueva Sucursal</h2>
+            <form id="sucursalForm" onsubmit="handleSucursalSubmit(event)">
+                <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+                <input type="hidden" id="sucursalId" name="sucursalId">
+
+                <div class="form-group">
+                    <label for="nombre">Nombre de la sucursal:</label>
+                    <input type="text" id="nombre" name="nombre" required>
+                </div>
+                <div class="form-group">
+                    <label for="codigo_interno">Código o identificador interno:</label>
+                    <input type="text" id="codigo_interno" name="codigo_interno" required>
+                </div>
+                <div class="form-group">
+                    <label for="direccion">Dirección completa:</label>
+                    <input type="text" id="direccion" name="direccion" required>
+                </div>
+                <div class="form-group">
+                    <label for="ciudad_estado">Ciudad / Estado:</label>
+                    <input type="text" id="ciudad_estado" name="ciudad_estado" required>
+                </div>
+                <div class="form-group">
+                    <label for="locacion">Locación (referencia, plaza, etc):</label>
+                    <input type="text" id="locacion" name="locacion">
+                </div>
+                <div class="form-group">
+                    <label for="telefono">Teléfono(s):</label>
+                    <input type="tel" id="telefono" name="telefono" pattern="[0-9\-+() ]+" required>
+                </div>
+                <div class="form-group">
+                    <label>Horarios de operación:</label>
+                    <button type="button" class="btn-secondary" onclick="showHorariosModal()">
+                        <i class="fa-solid fa-clock"></i> Administrar Horarios
+                    </button>
+                </div>
+                <div class="form-group">
+                    <label for="zona_horaria">Zona horaria:</label>
+                    <input type="text" id="zona_horaria" name="zona_horaria" required>
+                </div>
+                <div class="form-group">
+                    <label for="entrega_domicilio">¿Entrega a domicilio?</label>
+                    <select id="entrega_domicilio" name="entrega_domicilio" required>
+                        <option value="1">Sí</option>
+                        <option value="0">No</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="numero_mesas">¿Cuántas mesas tienes?</label>
+                    <input type="number" id="numero_mesas" name="numero_mesas" min="0" required>
+                </div>
+                <div class="form-group">
+                    <label for="capacidad_comensales">Capacidad de comensales:</label>
+                    <input type="number" id="capacidad_comensales" name="capacidad_comensales" min="0" required>
+                </div>
+                <div class="form-group">
+                    <label for="meta_diaria">Meta de facturación diaria:</label>
+                    <input type="number" step="0.01" id="meta_diaria" name="meta_diaria" min="0" required>
+                </div>
+                <div class="form-group">
+                    <label for="gerente">Gerente:</label>
+                    <input type="text" id="gerente" name="gerente" required>
+                </div>
+                <div class="form-group">
+                    <label for="activa">¿Activa?</label>
+                    <select id="activa" name="activa" required>
+                        <option value="1">Sí</option>
+                        <option value="0">No</option>
+                    </select>
+                </div>
+                <div class="form-actions" style="margin-top: 20px;">
+                    <button type="submit" class="btn-primary">Guardar</button>
+                    <button type="button" class="btn-secondary" onclick="closeSucursalModal()">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal para ver sucursal -->
+    <div id="verSucursalModal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeVerSucursalModal()">&times;</span>
+            <h2>Detalle de Sucursal</h2>
+            <div id="verSucursalInfo">
+                <!-- Aquí se inyectará la información -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para horarios -->
+    <div id="horariosModal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeHorariosModal()">&times;</span>
+            <h2>Horarios de Operación</h2>
+            <div class="horarios-grid">
+                <div class="horario-dia">
+                    <h3>Lunes</h3>
+                    <div class="horario-inputs">
+                        <input type="time" id="lunes_apertura" name="lunes_apertura">
+                        <input type="time" id="lunes_cierre" name="lunes_cierre">
+                        <label>
+                            <input type="checkbox" id="lunes_cerrado" name="lunes_cerrado">
+                            Cerrado
+                        </label>
+                    </div>
+                </div>
+
+                <div class="horario-dia">
+                    <h3>Martes</h3>
+                    <div class="horario-inputs">
+                        <input type="time" id="martes_apertura" name="martes_apertura">
+                        <input type="time" id="martes_cierre" name="martes_cierre">
+                        <label>
+                            <input type="checkbox" id="martes_cerrado" name="martes_cerrado">
+                            Cerrado
+                        </label>
+                    </div>
+                </div>
+
+                <div class="horario-dia">
+                    <h3>Miércoles</h3>
+                    <div class="horario-inputs">
+                        <input type="time" id="miercoles_apertura" name="miercoles_apertura">
+                        <input type="time" id="miercoles_cierre" name="miercoles_cierre">
+                        <label>
+                            <input type="checkbox" id="miercoles_cerrado" name="miercoles_cerrado">
+                            Cerrado
+                        </label>
+                    </div>
+                </div>
+
+                <div class="horario-dia">
+                    <h3>Jueves</h3>
+                    <div class="horario-inputs">
+                        <input type="time" id="jueves_apertura" name="jueves_apertura">
+                        <input type="time" id="jueves_cierre" name="jueves_cierre">
+                        <label>
+                            <input type="checkbox" id="jueves_cerrado" name="jueves_cerrado">
+                            Cerrado
+                        </label>
+                    </div>
+                </div>
+
+                <div class="horario-dia">
+                    <h3>Viernes</h3>
+                    <div class="horario-inputs">
+                        <input type="time" id="viernes_apertura" name="viernes_apertura">
+                        <input type="time" id="viernes_cierre" name="viernes_cierre">
+                        <label>
+                            <input type="checkbox" id="viernes_cerrado" name="viernes_cerrado">
+                            Cerrado
+                        </label>
+                    </div>
+                </div>
+
+                <div class="horario-dia">
+                    <h3>Sábado</h3>
+                    <div class="horario-inputs">
+                        <input type="time" id="sabado_apertura" name="sabado_apertura">
+                        <input type="time" id="sabado_cierre" name="sabado_cierre">
+                        <label>
+                            <input type="checkbox" id="sabado_cerrado" name="sabado_cerrado">
+                            Cerrado
+                        </label>
+                    </div>
+                </div>
+
+                <div class="horario-dia">
+                    <h3>Domingo</h3>
+                    <div class="horario-inputs">
+                        <input type="time" id="domingo_apertura" name="domingo_apertura">
+                        <input type="time" id="domingo_cierre" name="domingo_cierre">
+                        <label>
+                            <input type="checkbox" id="domingo_cerrado" name="domingo_cerrado">
+                            Cerrado
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn-primary" onclick="guardarHorariosTemporales()">Guardar Horarios</button>
+                <button type="button" class="btn-secondary" onclick="closeHorariosModal()">Cancelar</button>            </div>
+        </div>    </div>
+    <!-- Corrección de scripts - actualizar orden para cargar insumos.js antes de dashboard.js -->
+       <!-- Actualiza esta sección en dashboard.html -->
+    <script src="{% static 'accounts/js/menu.js' %}"></script>
+    <script src="{% static 'accounts/js/debug-menu.js' %}"></script>
+    <script src="{% static 'accounts/js/proveedores.js' %}"></script>
+    <script src="{% static 'accounts/js/insumos.js' %}"></script>
+    <script src="{% static 'accounts/js/dashboard.js' %}"></script>
+    <script src="{% static 'accounts/js/usuarios.js' %}"></script>
+    <script src="{% static 'accounts/js/notifications.js' %}"></script>
+
+</body>
+</html>

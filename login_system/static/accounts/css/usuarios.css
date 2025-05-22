@@ -1,0 +1,465 @@
+.usuarios-container {
+    padding: 2rem;
+    animation: fadeIn 0.3s ease;
+}
+
+.usuarios-filters {
+    display: flex;
+    gap: 1.5rem;
+    padding: 1.5rem;
+    background: #FFFFFF;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    margin-bottom: 2rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.search-box {
+    flex: 1;
+    min-width: 280px;
+    position: relative;
+}
+
+.search-box i {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #6B7280;
+    transition: color 0.3s ease;
+}
+
+.search-box input {
+    width: 100%;
+    padding: 0.75rem 1rem 0.75rem 2.5rem;
+    border: 2px solid #E5E7EB;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    background: #F9FAFB;
+    transition: all 0.3s ease;
+}
+
+.search-box input:hover {
+    border-color: #D1D5DB;
+    background: #FFFFFF;
+}
+
+.search-box input:focus {
+    border-color: #3B82F6;
+    background: #FFFFFF;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.search-box input:focus + i {
+    color: #3B82F6;
+}
+
+.role-filter {
+    position: relative;
+    min-width: 200px;
+}
+
+.role-filter select {
+    width: 100%;
+    padding: 0.75rem 2.5rem 0.75rem 1rem;
+    border: 2px solid #E5E7EB;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    background: #F9FAFB;
+    appearance: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.role-filter::after {
+    content: '\f107';
+    font-family: 'Font Awesome 6 Free';
+    font-weight: 900;
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #6B7280;
+    pointer-events: none;
+    transition: transform 0.3s ease;
+}
+
+.role-filter:hover select {
+    border-color: #D1D5DB;
+    background: #FFFFFF;
+}
+
+.role-filter select:focus {
+    border-color: #3B82F6;
+    background: #FFFFFF;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.role-filter select:focus + .role-filter::after {
+    transform: translateY(-50%) rotate(180deg);
+    color: #3B82F6;
+}
+
+/* Estilos para las opciones del select */
+.role-filter select option {
+    padding: 0.75rem;
+    background: #FFFFFF;
+}
+
+/* Estilos para los roles */
+.role-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    gap: 0.5rem;
+}
+
+.role-admin {
+    background: #EFF6FF;
+    color: #1D4ED8;
+}
+
+.role-gerente {
+    background: #F0FDF4;
+    color: #15803D;
+}
+
+.role-empleado {
+    background: #FEF3C7;
+    color: #92400E;
+}
+
+.usuarios-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-top: 2rem;
+}
+
+.user-card {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 1.5rem;
+    position: relative;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border: 1px solid var(--border-color);
+}
+
+.user-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.user-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.user-avatar {
+    width: 50px;
+    height: 50px;
+    background: var(--primary-blue);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.5rem;
+}
+
+.user-info h3 {
+    margin: 0;
+    color: var(--text-main);
+    font-size: 1.1rem;
+}
+
+.user-role {
+    display: inline-block;
+    padding: 0.3rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    margin-top: 0.5rem;
+}
+
+.role-admin {
+    background: rgba(59, 130, 246, 0.1);
+    color: #3B82F6;
+}
+
+.role-gerente {
+    background: rgba(16, 185, 129, 0.1);
+    color: #10B981;
+}
+
+.role-empleado {
+    background: rgba(249, 115, 22, 0.1);
+    color: #F97316;
+}
+
+.user-details {
+    margin: 1rem 0;
+}
+
+.user-details p {
+    margin: 0.5rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.user-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+.user-actions button {
+    flex: 1;
+    padding: 0.6rem;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+}
+
+/* Estilos para el modal */
+.password-input {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.password-input input {
+    width: 100%;
+    padding-right: 2.8rem;
+}
+
+.toggle-password {
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: #6B7280;
+    transition: color 0.2s ease;
+    padding: 0.5rem;
+}
+
+.toggle-password:hover {
+    color: #3B82F6;
+}
+
+.checkbox-container {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    cursor: pointer;
+    user-select: none;
+    padding: 0.5rem 0;
+}
+
+.checkbox-container input[type="checkbox"] {
+    width: 1.2rem;
+    height: 1.2rem;
+    border: 2px solid #E5E7EB;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+/* Estilos del formulario */
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.form-group label {
+    font-weight: 600;
+    color: #374151;
+    font-size: 0.95rem;
+}
+
+.form-group input,
+.form-group select {
+    padding: 0.75rem 1rem;
+    border: 2px solid #E5E7EB;
+    border-radius: 8px;
+    font-size: 1rem;
+    background: #F9FAFB;
+    color: #1F2937;
+    transition: all 0.3s ease;
+}
+
+.form-group input:hover,
+.form-group select:hover {
+    border-color: #D1D5DB;
+    background: #FFFFFF;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    border-color: #3B82F6;
+    background: #FFFFFF;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2.5rem;
+    padding-top: 1.5rem;
+    border-top: 2px solid #E5E7EB;
+    justify-content: flex-end;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .usuarios-filters {
+        flex-direction: column;
+    }
+
+    .search-box {
+        width: 100%;
+    }
+
+    #filterRole {
+        width: 100%;
+    }
+
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+.notification {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    background: white;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    animation: slideIn 0.3s ease;
+    z-index: 1000;
+}
+
+.notification.success {
+    background: #10B981;
+    color: white;
+}
+
+.notification.error {
+    background: #EF4444;
+    color: white;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Actualiza los estilos del modal y formulario */
+.modal-content {
+    background: #FFFFFF;
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    width: 90%;
+    max-width: 700px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.modal-content h2 {
+    color: #1F2937;
+    font-size: 1.5rem;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #E5E7EB;
+}
+
+.btn-primary,
+.btn-secondary {
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.3s ease;
+}
+
+.btn-primary {
+    background: #3B82F6;
+    color: white;
+    border: none;
+}
+
+.btn-primary:hover {
+    background: #2563EB;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+}
+
+.btn-secondary {
+    background: #F3F4F6;
+    color: #4B5563;
+    border: 1px solid #E5E7EB;
+}
+
+.btn-secondary:hover {
+    background: #E5E7EB;
+    color: #1F2937;
+}
+
+/* Mejora del scrollbar del modal */
+.modal-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.modal-content::-webkit-scrollbar-track {
+    background: #F3F4F6;
+    border-radius: 4px;
+}
+
+.modal-content::-webkit-scrollbar-thumb {
+    background: #D1D5DB;
+    border-radius: 4px;
+}
+
+.modal-content::-webkit-scrollbar-thumb:hover {
+    background: #9CA3AF;
+}
