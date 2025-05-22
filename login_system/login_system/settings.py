@@ -22,7 +22,7 @@ SECRET_KEY = 'tu-clave-secreta'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['31.97.42.133', 'localhost', '127.0.0.1']
 
 # Application definition
 INSTALLED_APPS = [
@@ -106,6 +106,7 @@ STATIC_URL = 'static/'
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static')
 ]
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 # Custom user model
 AUTH_USER_MODEL = 'accounts.User'
