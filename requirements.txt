@@ -1,0 +1,40 @@
+# Django framework
+Django==4.2.7
+
+# Database
+psycopg2-binary==2.9.9  # PostgreSQL adapter (if using PostgreSQL)
+mysqlclient==2.2.0  # MySQL adapter (if using MySQL)
+# Remove the one you're not using
+
+# Authentication and security
+django-allauth==0.58.2
+django-crispy-forms==2.0
+crispy-bootstrap5==0.7
+django-cors-headers==4.3.0
+
+# REST API
+djangorestframework==3.14.0
+
+# Environment variables
+python-dotenv==1.0.0
+environs==9.5.0
+
+# Production dependencies
+gunicorn==21.2.0
+whitenoise==6.5.0
+
+# Static files
+Pillow==10.1.0  # For handling images
+
+# Other utilities
+requests==2.31.0
+pandas==2.1.3  # If you're doing data analysis
+celery==5.3.4  # If you need task queue
+redis==5.0.1  # For caching or as a message broker for Celery
+
+# Development tools (optional, consider adding to a separate requirements-dev.txt)
+pytest==7.4.3
+pytest-django==4.7.0
+django-debug-toolbar==4.2.0
+black==23.11.0
+flake8==6.1.0
