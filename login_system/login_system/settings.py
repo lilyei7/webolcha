@@ -20,9 +20,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'tu-clave-secreta'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False  # Cambia a False en producción
 
-ALLOWED_HOSTS = ['31.97.42.133', 'localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['punto1208.com', 'www.punto1208.com', '31.97.42.133', 'localhost', '127.0.0.1']
 
 # Application definition
 INSTALLED_APPS = [
