@@ -111,23 +111,53 @@ function setupInventoryMenuAnimation() {
 function initializeSubmenuLinks() {
     // Submenu Inventario
     const submenuLinks = [
-        { id: 'menu-insumos-link', handler: loadInsumosContent }, // This function is now defined in insumos.js
-        { id: 'entradas_salidas', handler: function() { /* TODO: loadEntradasSalidasContent(); */ } },
+        { id: 'menu-insumos-link', handler: loadInsumosContent },
+        { id: 'entradas_salidas', handler: function() { 
+            console.log('[DEBUG] Click en Entradas y Salidas');
+            if (typeof window.loadEntradasSalidasContent === 'function') {
+                window.loadEntradasSalidasContent();
+            } else {
+                console.error('La función loadEntradasSalidasContent no está disponible');
+                alert('Error: Módulo de Entradas y Salidas no disponible');
+            }
+        }},
         { id: 'proveedores', handler: loadProveedoresContent },
-        { id: 'insumos_compuestos', handler: function() { /* TODO: loadInsumosCompuestosContent(); */ } },
-        { id: 'recetas', handler: function() { /* TODO: loadRecetasContent(); */ } },
+        { id: 'menu_insumos_compuestos', handler: loadInsumosCompuestosContent },
+        { id: 'recetas', handler: function() { 
+            console.log('[DEBUG] Click en Recetas');
+            if (typeof window.loadRecetasContent === 'function') {
+                try {
+                    window.loadRecetasContent();
+                } catch(err) {
+                    console.error('Error al cargar el módulo de recetas:', err);
+                    alert('Ha ocurrido un error al cargar el módulo de recetas. Por favor, recargue la página e intente nuevamente.');
+                }
+            } else {
+                console.warn('[ADVERTENCIA] La función loadRecetasContent no está disponible');
+                console.log('[DEBUG] Verificando funciones de recetas disponibles:', {
+                    loadRecetasContent: typeof window.loadRecetasContent,
+                    editarReceta: typeof window.editarReceta,
+                    verDetalleReceta: typeof window.verDetalleReceta,
+                    eliminarReceta: typeof window.eliminarReceta
+                });
+                
+                alert('El módulo de recetas no pudo cargarse correctamente. Esto puede deberse a un problema de carga de scripts.');
+            }
+        }},
         { id: 'reportes', handler: function() { /* TODO: loadReportesContent(); */ } },
     ];
+    
     submenuLinks.forEach(link => {
         const el = document.getElementById(link.id);
         if (el) {
             el.addEventListener('click', function(e) {
                 e.preventDefault();
-                // Remueve active de todos los links del submenu
-                document.querySelectorAll('#submenuInventario a').forEach(a => a.classList.remove('active'));
+                document.querySelectorAll('.submenu a').forEach(link => link.classList.remove('active'));
                 this.classList.add('active');
-                if (typeof link.handler === 'function') link.handler();
+                link.handler();
             });
+        } else {
+            console.warn(`[ADVERTENCIA] Elemento con ID '${link.id}' no encontrado en el DOM`);
         }
     });
 

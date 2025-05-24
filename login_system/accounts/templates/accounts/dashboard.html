@@ -2,12 +2,22 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Dashboard - OLCHA Technologies</title>    <link rel="stylesheet" href="{% static 'accounts/css/styles.css' %}">
+    <title>Punto1208</title>
+    <link rel="stylesheet" href="{% static 'accounts/css/styles.css' %}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="{% static 'accounts/css/usuarios.css' %}">
     <link rel="stylesheet" href="{% static 'accounts/css/insumos.css' %}">
     <link rel="stylesheet" href="{% static 'accounts/css/notifications.css' %}">
     <link rel="stylesheet" href="{% static 'accounts/css/menu.css' %}">
+    
+    <!-- Favicon para modo claro (tema por defecto) -->
+    <link rel="icon" href="{% static 'images/favicon-light.ico' %}" type="image/x-icon" media="(prefers-color-scheme: light)">
+    
+    <!-- Favicon para modo oscuro -->
+    <link rel="icon" href="{% static 'images/favicon-dark.ico' %}" type="image/x-icon" media="(prefers-color-scheme: dark)">
+    
+    <!-- Favicon fallback para navegadores que no soportan media queries -->
+    <link rel="icon" href="{% static 'images/favicon-light.ico' %}" type="image/x-icon">
 </head>
 <body>
     <div class="app">
@@ -26,7 +36,7 @@
                     <a href="#" id="entradas_salidas"><i class="fa-solid fa-exchange-alt"></i> Entradas y salidas</a>
                     <a href="#" id="proveedores"><i class="fa-solid fa-truck"></i> Proveedores</a>
                     <a href="#" id="menu-insumos-link"><i class="fa-solid fa-carrot"></i> Insumos</a>
-                    <a href="#" id="insumos_compuestos"><i class="fa-solid fa-blender"></i> Insumos compuestos</a>
+                    <a href="#" id="menu_insumos_compuestos"><i class="fa-solid fa-blender"></i> Insumos compuestos</a>
                     <a href="#" id="recetas"><i class="fa-solid fa-book"></i> Recetas</a>
                     <a href="#" id="reportes"><i class="fa-solid fa-chart-bar"></i> Reportes</a>
                 </div>
@@ -346,6 +356,9 @@
     <script src="{% static 'accounts/js/debug-menu.js' %}"></script>
     <script src="{% static 'accounts/js/proveedores.js' %}"></script>
     <script src="{% static 'accounts/js/insumos.js' %}"></script>
+    <script src="{% static 'accounts/js/insumos_compuestos.js' %}"></script>
+    <script src="{% static 'accounts/js/recetas.js' %}"></script>
+    <script src="{% static 'accounts/js/entradas_salidas.js' %}"></script> <!-- AGREGAR ESTA LÍNEA -->
     <script src="{% static 'accounts/js/dashboard.js' %}"></script>
     <script src="{% static 'accounts/js/usuarios.js' %}"></script>
     <script src="{% static 'accounts/js/notifications.js' %}"></script>

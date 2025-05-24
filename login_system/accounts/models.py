@@ -192,3 +192,92 @@ class InsumoProveedor(models.Model):
 
     def __str__(self):
         return f"{self.insumo.nombre} - {self.proveedor.nombre}"
+
+class InsumoCompuesto(models.Model):
+    nombre = models.CharField(max_length=100)
+    categoria = models.CharField(max_length=50)
+    unidad = models.CharField(max_length=50)
+    cantidad = models.DecimalField(max_digits=10, decimal_places=2)
+    costo_total = models.DecimalField(max_digits=10, decimal_places=2)
+    descripcion = models.TextField(blank=True, null=True)
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        db_table = 'insumos_compuestos'
+        ordering = ['nombre']
+        
+    def __str__(self):
+        return self.nombre
+
+class ComponenteInsumoCompuesto(models.Model):
+    insumo_compuesto = models.ForeignKey(
+        InsumoCompuesto, 
+        on_delete=models.CASCADE,
+        related_name='componentes'
+    )
+    insumo = models.ForeignKey(
+        Insumo, 
+        on_delete=models.PROTECT,
+        related_name='usado_en_compuestos'
+    )
+    cantidad = models.DecimalField(max_digits=10, decimal_places=2)
+    costo = models.DecimalField(max_digits=10, decimal_places=2)
+    
+    class Meta:
+        db_table = 'componentes_insumo_compuesto'
+
+class Receta(models.Model):
+    nombre = models.CharField(max_length=100)
+    categoria = models.CharField(max_length=50)
+    costo = models.DecimalField(max_digits=10, decimal_places=2)
+    descripcion = models.TextField(blank=True, null=True)
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        db_table = 'recetas'
+        ordering = ['nombre']
+        
+    def __str__(self):
+        return self.nombre
+
+class InsumoReceta(models.Model):
+    receta = models.ForeignKey(
+        'Receta', 
+        on_delete=models.CASCADE,
+        related_name='insumos'
+    )
+    insumo = models.ForeignKey(
+        'Insumo', 
+        on_delete=models.PROTECT,
+        related_name='usado_en_recetas'
+    )
+    cantidad = models.DecimalField(max_digits=10, decimal_places=2)
+    costo = models.DecimalField(max_digits=10, decimal_places=2)
+    
+    class Meta:
+        db_table = 'insumos_receta'
+        unique_together = ('receta', 'insumo')
+        
+    def __str__(self):
+        return f"{self.receta.nombre} - {self.insumo.nombre}"
+
+class InsumoCompuestoReceta(models.Model):
+    receta = models.ForeignKey(
+        'Receta', 
+        on_delete=models.CASCADE,
+        related_name='insumos_compuestos'
+    )
+    insumo_compuesto = models.ForeignKey(
+        'InsumoCompuesto', 
+        on_delete=models.PROTECT,
+        related_name='usado_en_recetas'
+    )
+    cantidad = models.DecimalField(max_digits=10, decimal_places=2)
+    costo = models.DecimalField(max_digits=10, decimal_places=2)
+    
+    class Meta:
+        db_table = 'insumos_compuestos_receta'
+        unique_together = ('receta', 'insumo_compuesto')
+        
+    def __str__(self):
+        return f"{self.receta.nombre} - {self.insumo_compuesto.nombre}"

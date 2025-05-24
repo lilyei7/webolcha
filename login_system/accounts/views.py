@@ -4,13 +4,12 @@ from django.contrib.auth import authenticate, login
 from django.utils import timezone
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
-from .models import Sucursal, HorarioSucursal, Insumo, Categoria, Proveedor, InsumoProveedor  # Added InsumoProveedor here
+from .models import Sucursal, HorarioSucursal, Insumo, Categoria, Proveedor, InsumoProveedor, InsumoCompuesto, ComponenteInsumoCompuesto, Receta, InsumoReceta, InsumoCompuestoReceta  # Added InsumoProveedor and InsumoCompuesto here
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 User = get_user_model()
 import json
 from decimal import Decimal, InvalidOperation
-from django.db.models import Q
 
 def safe_decimal(value):
     if value is None:
@@ -44,7 +43,17 @@ def login_view(request):
 @ensure_csrf_cookie  # Add this decorator
 @login_required
 def dashboard(request):
-    return render(request, 'accounts/dashboard.html')
+    user = request.user
+    # Crear el nombre completo del usuario
+    full_name = f"{user.first_name} {user.last_name}".strip()
+    # Si el nombre está vacío, usar el nombre de usuario
+    if not full_name:
+        full_name = user.username
+    
+    context = {
+        'user_full_name': full_name
+    }
+    return render(request, 'accounts/dashboard.html', context)
 
 @csrf_exempt
 def sucursales_crud(request):
@@ -534,7 +543,67 @@ def insumos_crud(request):
                 'message': str(e)
             }, status=400)
     
-    # Implementar PUT y DELETE similarmente...
+    elif request.method == 'PUT':
+        try:
+            data = json.loads(request.body)
+            
+            # Validar que existe un ID
+            if 'id' not in data:
+                return JsonResponse({
+                    'status': 'error',
+                    'message': 'Se requiere ID para actualizar un insumo'
+                }, status=400)
+            
+            # Obtener y actualizar el insumo
+            insumo = Insumo.objects.get(id=data['id'])
+            
+            # Actualizar datos básicos
+            insumo.nombre = data.get('nombre', insumo.nombre)
+            insumo.unidad = data.get('unidad', insumo.unidad)
+            
+            # Actualizar categoría si se proporciona
+            if 'categoria' in data:
+                try:
+                    categoria = Categoria.objects.get(nombre=data['categoria'])
+                    insumo.categoria = categoria
+                except Categoria.DoesNotExist:
+                    return JsonResponse({
+                        'status': 'error',
+                        'message': f'La categoría {data["categoria"]} no existe'
+                    }, status=400)
+            
+            insumo.tipo = data.get('tipo', insumo.tipo)
+            insumo.stock = data.get('stock', insumo.stock)
+            insumo.minimo = data.get('minimo', insumo.minimo)
+            
+            insumo.save()
+            
+            return JsonResponse({
+                'status': 'success',
+                'message': 'Insumo actualizado correctamente',
+                'insumo': {
+                    'id': insumo.id,
+                    'nombre': insumo.nombre,
+                    'unidad': insumo.unidad,
+                    'categoria': insumo.categoria.nombre,
+                    'tipo': insumo.tipo,
+                    'stock': insumo.stock,
+                    'minimo': insumo.minimo
+                }
+            })
+            
+        except Insumo.DoesNotExist:
+            return JsonResponse({
+                'status': 'error',
+                'message': 'Insumo no encontrado'
+            }, status=404)
+        except Exception as e:
+            return JsonResponse({
+                'status': 'error',
+                'message': str(e)
+            }, status=400)
+    
+    # Implementar DELETE similarmente...
 
 @login_required
 @csrf_exempt
@@ -745,22 +814,22 @@ def proveedores_crud(request):
 def proveedor_productos(request, id):
     try:
         proveedor = Proveedor.objects.get(id=id)
-        relaciones = InsumoProveedor.objects.filter(proveedor=proveedor).select_related('insumo')
-        
-        productos = []
-        for rel in relaciones:
-            productos.append({
-                'id': rel.insumo.id,
-                'nombre': rel.insumo.nombre,
-                'categoria': rel.insumo.categoria.nombre if rel.insumo.categoria else None,
-                'costo_unitario': float(rel.costo_unitario),
-                'es_principal': rel.es_proveedor_principal
-            })
+        productos = InsumoProveedor.objects.filter(proveedor=proveedor)
         
         return JsonResponse({
             'status': 'success',
             'proveedor_nombre': proveedor.nombre,
-            'productos': productos
+            'productos': [
+                {
+                    'id': p.id,
+                    'insumo_id': p.insumo.id,
+                    'nombre': p.insumo.nombre,
+                    'categoria': p.insumo.categoria.nombre if p.insumo.categoria else None,
+                    'unidad': p.insumo.unidad,
+                    'costo_unitario': float(p.costo_unitario) if p.costo_unitario else 0,
+                    'es_principal': p.es_proveedor_principal
+                } for p in productos
+            ]
         })
     except Proveedor.DoesNotExist:
         return JsonResponse({
@@ -776,7 +845,7 @@ def proveedor_productos(request, id):
 @login_required
 @csrf_exempt
 def asignar_insumos_proveedor(request, id):
-    """Asigna insumos a un proveedor"""
+    """Asigna insumos a un proveedor con costos unitarios"""
     if request.method != 'POST':
         return JsonResponse({
             'status': 'error',
@@ -789,9 +858,9 @@ def asignar_insumos_proveedor(request, id):
         
         # Parsear los datos de la solicitud
         data = json.loads(request.body)
-        insumos_ids = data.get('insumos', [])
+        insumos_data = data.get('insumos', [])
         
-        if not insumos_ids:
+        if not insumos_data:
             return JsonResponse({
                 'status': 'error',
                 'message': 'No se proporcionaron insumos para asignar'
@@ -799,8 +868,10 @@ def asignar_insumos_proveedor(request, id):
             
         # Procesar cada insumo
         insumos_asignados = 0
-        for insumo_id in insumos_ids:
+        for insumo_info in insumos_data:
             try:
+                insumo_id = insumo_info.get('id')
+                costo = Decimal(str(insumo_info.get('costo', '0')))
                 insumo = Insumo.objects.get(id=insumo_id)
                 
                 # Verificar si ya existe la relación
@@ -808,13 +879,17 @@ def asignar_insumos_proveedor(request, id):
                     insumo=insumo,
                     proveedor=proveedor,
                     defaults={
-                        'costo_unitario': Decimal('0.00'),  # Costo predeterminado
+                        'costo_unitario': costo,
                         'es_proveedor_principal': False  # No es principal por defecto
                     }
                 )
                 
-                if created:
-                    insumos_asignados += 1
+                # Si la relación ya existía, actualizar el costo
+                if not created:
+                    rel.costo_unitario = costo
+                    rel.save()
+                    
+                insumos_asignados += 1
                     
             except Insumo.DoesNotExist:
                 # Ignorar insumos que no existen
@@ -836,8 +911,628 @@ def asignar_insumos_proveedor(request, id):
             'status': 'error',
             'message': 'Formato JSON inválido'
         }, status=400)
+    except InvalidOperation:
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Valor de costo inválido'
+        }, status=400)
     except Exception as e:
         return JsonResponse({
             'status': 'error',
             'message': str(e)
         }, status=500)
+
+@login_required
+@csrf_exempt
+def insumos_compuestos_crud(request):
+    if request.method == 'GET':
+        try:
+            insumos_compuestos = []
+            for ic in InsumoCompuesto.objects.prefetch_related('componentes__insumo').all():
+                insumos_compuestos.append({
+                    'id': ic.id,
+                    'nombre': ic.nombre,
+                    'categoria': ic.categoria,
+                    'unidad': ic.unidad,
+                    'cantidad': float(ic.cantidad),
+                    'costo': float(ic.costo_total),
+                    'descripcion': ic.descripcion,
+                    'componentes': [
+                        {
+                            'insumo': c.insumo.nombre,
+                            'unidad': c.insumo.unidad,
+                            'cantidad': float(c.cantidad),
+                            'costo': float(c.costo)
+                        } for c in ic.componentes.all()
+                    ]
+                })
+            return JsonResponse({'status': 'success', 'insumos_compuestos': insumos_compuestos})
+        except Exception as e:
+            return JsonResponse({
+                'status': 'error',
+                'message': str(e)
+            }, status=500)
+            
+    elif request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            
+            # Validaciones básicas
+            if not data.get('nombre'):
+                return JsonResponse({
+                    'status': 'error', 
+                    'message': 'El nombre es requerido'
+                }, status=400)
+                
+            if not data.get('componentes') or not isinstance(data['componentes'], list):
+                return JsonResponse({
+                    'status': 'error',
+                    'message': 'Se requieren componentes'
+                }, status=400)
+                
+            # Crear insumo compuesto
+            insumo_compuesto = InsumoCompuesto.objects.create(
+                nombre=data['nombre'],
+                categoria=data['categoria'],
+                unidad=data['unidad'],
+                cantidad=data['cantidad'],
+                costo_total=data['costo_total'],
+                descripcion=data.get('descripcion', '')
+            )
+            
+            # Crear componentes
+            for comp_data in data['componentes']:
+                insumo = Insumo.objects.get(id=comp_data['insumo_id'])
+                ComponenteInsumoCompuesto.objects.create(
+                    insumo_compuesto=insumo_compuesto,
+                    insumo=insumo,
+                    cantidad=comp_data['cantidad'],
+                    costo=comp_data['costo']
+                )
+                
+            return JsonResponse({
+                'status': 'success',
+                'message': 'Insumo compuesto creado exitosamente',
+                'id': insumo_compuesto.id
+            })
+            
+        except Insumo.DoesNotExist:
+            return JsonResponse({
+                'status': 'error',
+                'message': 'Uno o más insumos no existen'
+            }, status=400)
+        except Exception as e:
+            return JsonResponse({
+                'status': 'error',
+                'message': str(e)
+            }, status=400)
+
+@login_required
+def obtener_insumos_para_compuesto(request):
+    """Devuelve la lista de insumos disponibles para crear compuestos"""
+    try:
+        insumos = []
+        for insumo in Insumo.objects.all():
+            insumos.append({
+                'id': insumo.id,
+                'nombre': insumo.nombre,
+                'unidad': insumo.unidad,
+                # Calculamos un costo estimado a partir del costo de proveedores
+                'costo_estimado': float(InsumoProveedor.objects.filter(
+                    insumo=insumo, 
+                    es_proveedor_principal=True
+                ).first().costo_unitario if InsumoProveedor.objects.filter(
+                    insumo=insumo, 
+                    es_proveedor_principal=True
+                ).exists() else 0)
+            })
+            
+        return JsonResponse({
+            'status': 'success',
+            'insumos': insumos
+        })
+    except Exception as e:
+        return JsonResponse({
+            'status': 'error',
+            'message': str(e)
+        }, status=500)
+
+@login_required
+@csrf_exempt  # Asegurar que este decorador esté presente
+def insumo_compuesto_detail(request, id):
+    """Vista para obtener, actualizar o eliminar un insumo compuesto específico"""
+    try:
+        insumo = InsumoCompuesto.objects.prefetch_related('componentes__insumo').get(id=id)
+        
+        if request.method == 'GET':
+            return JsonResponse({
+                'status': 'success',
+                'insumo_compuesto': {
+                    'id': insumo.id,
+                    'nombre': insumo.nombre,
+                    'categoria': insumo.categoria,
+                    'unidad': insumo.unidad,
+                    'cantidad': float(insumo.cantidad),
+                    'costo': float(insumo.costo_total),
+                    'descripcion': insumo.descripcion,
+                    'componentes': [
+                        {
+                            'insumo': c.insumo.nombre,
+                            'insumo_id': c.insumo.id,
+                            'unidad': c.insumo.unidad,
+                            'cantidad': float(c.cantidad),
+                            'costo': float(c.costo)
+                        } for c in insumo.componentes.all()
+                    ]
+                }
+            })
+        elif request.method == 'PUT':
+            # Procesar actualización del insumo compuesto
+            data = json.loads(request.body)
+            
+            # Actualizar campos básicos
+            insumo.nombre = data['nombre']
+            insumo.categoria = data['categoria']
+            insumo.unidad = data['unidad']
+            insumo.cantidad = data['cantidad']
+            insumo.costo_total = data['costo_total']
+            insumo.descripcion = data.get('descripcion', '')
+            insumo.save()
+            
+            # Eliminar todos los componentes existentes
+            insumo.componentes.all().delete()
+            
+            # Crear nuevos componentes
+            for comp_data in data['componentes']:
+                try:
+                    comp_insumo = Insumo.objects.get(id=comp_data['insumo_id'])
+                    ComponenteInsumoCompuesto.objects.create(
+                        insumo_compuesto=insumo,
+                        insumo=comp_insumo,
+                        cantidad=comp_data['cantidad'],
+                        costo=comp_data['costo']
+                    )
+                except Insumo.DoesNotExist:
+                    # Ignorar componentes con insumos que no existen
+                    pass
+            
+            return JsonResponse({
+                'status': 'success',
+                'message': 'Insumo compuesto actualizado correctamente'
+            })
+            
+        elif request.method == 'DELETE':
+            insumo.delete()
+            return JsonResponse({
+                'status': 'success',
+                'message': 'Insumo compuesto eliminado correctamente'
+            })
+        else:
+            return JsonResponse({
+                'status': 'error',
+                'message': 'Método no permitido'
+            }, status=405)
+    except InsumoCompuesto.DoesNotExist:
+        return JsonResponse({
+            'status': 'error',
+            'message': f'Insumo compuesto con ID {id} no encontrado'
+        }, status=404)
+    except Exception as e:
+        return JsonResponse({
+            'status': 'error',
+            'message': str(e)
+        }, status=500)
+
+@login_required
+@csrf_exempt
+def recetas_crud(request):
+    """Vista para listar todas las recetas o crear una nueva"""
+    if request.method == 'GET':
+        try:
+            recetas = []
+            for receta in Receta.objects.prefetch_related('insumos__insumo', 'insumos_compuestos__insumo_compuesto').all():
+                recetas.append({
+                    'id': receta.id,
+                    'nombre': receta.nombre,
+                    'categoria': receta.categoria,
+                    'costo': float(receta.costo),
+                    'descripcion': receta.descripcion
+                })
+            return JsonResponse({'status': 'success', 'recetas': recetas})
+        except Exception as e:
+            return JsonResponse({
+                'status': 'error',
+                'message': str(e)
+            }, status=500)
+            
+    elif request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            
+            # Validar datos básicos
+            if not data.get('nombre'):
+                return JsonResponse({
+                    'status': 'error',
+                    'message': 'El nombre de la receta es requerido'
+                }, status=400)
+                
+            # Crear la receta
+            receta = Receta.objects.create(
+                nombre=data['nombre'],
+                categoria=data['categoria'],
+                costo=data['costo'],
+                descripcion=data.get('descripcion', '')
+            )
+            
+            # Procesar insumos simples
+            if 'insumos' in data and isinstance(data['insumos'], list):
+                for insumo_data in data['insumos']:
+                    try:
+                        insumo = Insumo.objects.get(id=insumo_data['id'])
+                        InsumoReceta.objects.create(
+                            receta=receta,
+                            insumo=insumo,
+                            cantidad=insumo_data['cantidad'],
+                            costo=insumo_data['costo']
+                        )
+                    except Insumo.DoesNotExist:
+                        pass
+            
+            # Procesar insumos compuestos
+            if 'insumos_compuestos' in data and isinstance(data['insumos_compuestos'], list):
+                for insumo_data in data['insumos_compuestos']:
+                    try:
+                        insumo_compuesto = InsumoCompuesto.objects.get(id=insumo_data['id'])
+                        InsumoCompuestoReceta.objects.create(
+                            receta=receta,
+                            insumo_compuesto=insumo_compuesto,
+                            cantidad=insumo_data['cantidad'],
+                            costo=insumo_data['costo']
+                        )
+                    except InsumoCompuesto.DoesNotExist:
+                        pass
+            
+            return JsonResponse({
+                'status': 'success',
+                'message': 'Receta creada exitosamente',
+                'id': receta.id
+            })
+            
+        except Exception as e:
+            return JsonResponse({
+                'status': 'error',
+                'message': str(e)
+            }, status=400)
+
+@login_required
+@csrf_exempt
+def receta_detail(request, id):
+    """Vista para obtener, actualizar o eliminar una receta específica"""
+    try:
+        receta = Receta.objects.prefetch_related(
+            'insumos__insumo', 
+            'insumos_compuestos__insumo_compuesto'
+        ).get(id=id)
+        
+        if request.method == 'GET':
+            # Construir los detalles de la receta
+            insumos = [
+                {
+                    'id': item.insumo.id,
+                    'nombre': item.insumo.nombre,
+                    'unidad': item.insumo.unidad,
+                    'cantidad': float(item.cantidad),
+                    'costo': float(item.costo)
+                }
+                for item in receta.insumos.all()
+            ]
+            
+            insumos_compuestos = [
+                {
+                    'id': item.insumo_compuesto.id,
+                    'nombre': item.insumo_compuesto.nombre,
+                    'unidad': item.insumo_compuesto.unidad,
+                    'cantidad': float(item.cantidad),
+                    'costo': float(item.costo)
+                }
+                for item in receta.insumos_compuestos.all()
+            ]
+            
+            return JsonResponse({
+                'status': 'success',
+                'receta': {
+                    'id': receta.id,
+                    'nombre': receta.nombre,
+                    'categoria': receta.categoria,
+                    'costo': float(receta.costo),
+                    'descripcion': receta.descripcion,
+                    'insumos': insumos,
+                    'insumos_compuestos': insumos_compuestos
+                }
+            })
+            
+        elif request.method == 'PUT':
+            data = json.loads(request.body)
+            
+            # Actualizar datos básicos de la receta
+            receta.nombre = data['nombre']
+            receta.categoria = data['categoria']
+            receta.costo = data['costo']
+            receta.descripcion = data.get('descripcion', '')
+            receta.save()
+            
+            # Eliminar todos los insumos existentes
+            receta.insumos.all().delete()
+            receta.insumos_compuestos.all().delete()
+            
+            # Procesar insumos simples
+            if 'insumos' in data and isinstance(data['insumos'], list):
+                for insumo_data in data['insumos']:
+                    try:
+                        insumo = Insumo.objects.get(id=insumo_data['id'])
+                        InsumoReceta.objects.create(
+                            receta=receta,
+                            insumo=insumo,
+                            cantidad=insumo_data['cantidad'],
+                            costo=insumo_data['costo']
+                        )
+                    except Insumo.DoesNotExist:
+                        pass
+            
+            # Procesar insumos compuestos
+            if 'insumos_compuestos' in data and isinstance(data['insumos_compuestos'], list):
+                for insumo_data in data['insumos_compuestos']:
+                    try:
+                        insumo_compuesto = InsumoCompuesto.objects.get(id=insumo_data['id'])
+                        InsumoCompuestoReceta.objects.create(
+                            receta=receta,
+                            insumo_compuesto=insumo_compuesto,
+                            cantidad=insumo_data['cantidad'],
+                            costo=insumo_data['costo']
+                        )
+                    except InsumoCompuesto.DoesNotExist:
+                        pass
+            
+            return JsonResponse({
+                'status': 'success',
+                'message': 'Receta actualizada exitosamente'
+            })
+            
+        elif request.method == 'DELETE':
+            receta.delete()
+            return JsonResponse({
+                'status': 'success',
+                'message': 'Receta eliminada exitosamente'
+            })
+            
+    except Receta.DoesNotExist:
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Receta no encontrada'
+        }, status=404)
+    except Exception as e:
+        return JsonResponse({
+            'status': 'error',
+            'message': str(e)
+        }, status=500)
+
+@login_required
+def obtener_insumos_para_receta(request):
+    """Devuelve la lista de insumos disponibles para crear recetas"""
+    try:
+        insumos = []
+        for insumo in Insumo.objects.all():
+            # Obtener el costo unitario del proveedor principal
+            insumo_proveedor = InsumoProveedor.objects.filter(
+                insumo=insumo, 
+                es_proveedor_principal=True
+            ).first()
+            
+            costo_unitario = 0
+            if insumo_proveedor:
+                costo_unitario = float(insumo_proveedor.costo_unitario)
+            else:
+                # Si no hay proveedor principal, buscar cualquier proveedor
+                cualquier_proveedor = InsumoProveedor.objects.filter(insumo=insumo).first()
+                if cualquier_proveedor:
+                    costo_unitario = float(cualquier_proveedor.costo_unitario)
+            
+            insumos.append({
+                'id': insumo.id,
+                'nombre': insumo.nombre,
+                'unidad': insumo.unidad,
+                'categoria': insumo.categoria.nombre if insumo.categoria else 'Sin categoría',
+                'costo_unitario': costo_unitario  # Asegura que siempre hay un valor, aunque sea 0
+            })
+            
+        return JsonResponse({
+            'status': 'success',
+            'insumos': insumos
+        })
+    except Exception as e:
+        return JsonResponse({
+            'status': 'error',
+            'message': str(e)
+        }, status=500)
+
+@login_required
+def obtener_insumos_compuestos_para_receta(request):
+    """Devuelve la lista de insumos compuestos disponibles para crear recetas"""
+    try:
+        insumos_compuestos = []
+        for insumo in InsumoCompuesto.objects.all():
+            insumos_compuestos.append({
+                'id': insumo.id,
+                'nombre': insumo.nombre,
+                'unidad': insumo.unidad,
+                'costo': float(insumo.costo_total)
+            })
+            
+        return JsonResponse({
+            'status': 'success',
+            'insumos_compuestos': insumos_compuestos
+        })
+    except Exception as e:
+        return JsonResponse({
+            'status': 'error',
+            'message': str(e)
+        }, status=500)
+
+@login_required
+@csrf_exempt
+def insumo_detail(request, id):
+    """Vista para obtener, actualizar o eliminar un insumo específico"""
+    try:
+        insumo = Insumo.objects.get(id=id)
+        
+        if request.method == 'GET':
+            # Obtener detalles del insumo
+            return JsonResponse({
+                'status': 'success',
+                'insumo': {
+                    'id': insumo.id,
+                    'nombre': insumo.nombre,
+                    'unidad': insumo.unidad,
+                    'categoria': insumo.categoria.nombre,
+                    'tipo': insumo.tipo,
+                    'stock': insumo.stock,
+                    'minimo': insumo.minimo
+                }
+            })
+        
+        elif request.method == 'PUT':
+            # Actualizar el insumo
+            data = json.loads(request.body)
+            
+            # Actualizar campos básicos
+            insumo.nombre = data.get('nombre', insumo.nombre)
+            insumo.unidad = data.get('unidad', insumo.unidad)
+            
+            # Actualizar categoría si se proporciona
+            if 'categoria' in data:
+                try:
+                    categoria = Categoria.objects.get(nombre=data['categoria'])
+                    insumo.categoria = categoria
+                except Categoria.DoesNotExist:
+                    return JsonResponse({
+                        'status': 'error',
+                        'message': f'La categoría {data["categoria"]} no existe'
+                    }, status=400)
+            
+            insumo.tipo = data.get('tipo', insumo.tipo)
+            insumo.stock = data.get('stock', insumo.stock)
+            insumo.minimo = data.get('minimo', insumo.minimo)
+            
+            insumo.save()
+            
+            return JsonResponse({
+                'status': 'success',
+                'message': 'Insumo actualizado correctamente',
+                'insumo': {
+                    'id': insumo.id,
+                    'nombre': insumo.nombre,
+                    'unidad': insumo.unidad,
+                    'categoria': insumo.categoria.nombre,
+                    'tipo': insumo.tipo,
+                    'stock': insumo.stock,
+                    'minimo': insumo.minimo
+                }
+            })
+        
+        elif request.method == 'DELETE':
+            # Eliminar el insumo
+            insumo.delete()
+            return JsonResponse({
+                'status': 'success',
+                'message': 'Insumo eliminado correctamente'
+            })
+        
+        else:
+            return JsonResponse({
+                'status': 'error',
+                'message': f'Método {request.method} no soportado'
+            }, status=405)
+            
+    except Insumo.DoesNotExist:
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Insumo no encontrado'
+        }, status=404)
+    except json.JSONDecodeError:
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Datos JSON inválidos'
+        }, status=400)
+    except Exception as e:
+        return JsonResponse({
+            'status': 'error',
+            'message': str(e)
+        }, status=500)
+
+def obtener_costo_unitario_insumo(insumo_id):
+    """
+    Obtiene el costo unitario de un insumo basado en su ID.
+    Prioriza el proveedor principal, si existe.
+    """
+    try:
+        # Intentar obtener el registro con proveedor principal
+        insumo_proveedor = InsumoProveedor.objects.filter(
+            insumo_id=insumo_id,
+            es_proveedor_principal=True
+        ).first()
+        
+        # Si no hay proveedor principal, intentar con cualquier proveedor
+        if not insumo_proveedor:
+            insumo_proveedor = InsumoProveedor.objects.filter(
+                insumo_id=insumo_id
+            ).first()
+        
+        # Si encontramos algún registro, devolver el costo unitario
+        if insumo_proveedor:
+            return float(insumo_proveedor.costo_unitario)
+        
+        # Si no hay ningún proveedor, devolver 0
+        return 0
+        
+    except Exception as e:
+        print(f"Error al obtener costo unitario: {str(e)}")
+        return 0
+
+# Ejemplo de uso en una vista
+@login_required
+def detalles_insumo(request, insumo_id):
+    insumo = Insumo.objects.get(id=insumo_id)
+    costo_unitario = obtener_costo_unitario_insumo(insumo_id)
+    
+    return JsonResponse({
+        'status': 'success',
+        'insumo': {
+            'id': insumo.id,
+            'nombre': insumo.nombre,
+            'costo_unitario': costo_unitario
+        }
+    })
+
+# Añadir al modelo Insumo en models.py
+def costo_unitario(self):
+    """Devuelve el costo unitario del insumo con proveedor principal o cualquier proveedor"""
+    try:
+        # Primero buscar con proveedor principal
+        rel = InsumoProveedor.objects.filter(
+            insumo=self,
+            es_proveedor_principal=True
+        ).first()
+        
+        # Si no hay proveedor principal, usar cualquier proveedor
+        if not rel:
+            rel = InsumoProveedor.objects.filter(insumo=self).first()
+            
+        # Si hay alguna relación, devolver el costo
+        if rel:
+            return float(rel.costo_unitario)
+            
+        # Por defecto devolver 0
+        return 0
+        
+    except Exception as e:
+        return 0

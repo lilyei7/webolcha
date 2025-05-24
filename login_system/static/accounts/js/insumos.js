@@ -178,26 +178,29 @@ function inicializarSelectConIconos(selectId) {
 // Función para mostrar el modal de categoría
 function showCategoriaModal() {
     // Crear el modal si no existe
-    if (!document.getElementById('categoriaModal')) {
+    let categoriaModal = document.getElementById('categoriaModal');
+    if (!categoriaModal) {
         const categoriaModalHTML = `
-            <div id="categoriaModal" class="modal">
-                <div class="modal-content categoria-modal">
-                    <span class="close-modal" id="closeCategoriaModal">&times;</span>
-                    <h2>Nueva Categoría</h2>
+            <div id="categoriaModal" class="modal"
+                style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.45); z-index: 3000;">
+                <div class="modal-content categoria-modal"
+                    style="background: #fff; border-radius: 12px; max-width: 400px; width: 95%; padding: 32px 24px 24px 24px; box-shadow: 0 8px 32px rgba(37,99,235,0.25); position: relative; z-index: 3100;">
+                    <span class="close-modal" id="closeCategoriaModal"
+                        style="position: absolute; right: 18px; top: 12px; font-size: 28px; cursor: pointer; color: #6b7280; transition: color 0.2s; z-index: 3200;">&times;</span>
+                    <h2 style="margin-top: 0; margin-bottom: 18px;">Nueva Categoría</h2>
                     <form id="categoriaForm">
                         <div class="form-group">
                             <label for="categoriaNombre">Nombre de la categoría: *</label>
                             <input type="text" id="categoriaNombre" required>
                         </div>
-                        
                         <div class="form-group">
                             <div class="icono-container">
                                 <label>Icono y color:</label>
-                                <div class="icono-preview" id="iconoPreview">
-                                    <i class="fa-solid fa-cube" id="iconoSeleccionado"></i>
+                                <div class="icono-preview" id="iconoPreview"
+                                    style="display: inline-block; background: #f3f4f6; border-radius: 6px; padding: 8px; margin-bottom: 8px;">
+                                    <i class="fa-solid fa-cube" id="iconoSeleccionado" style="color: #374151; font-size: 1.5rem;"></i>
                                 </div>
-                                
-                                <div class="icono-selector">
+                                <div class="icono-selector" style="margin-top: 8px;">
                                     <select id="categoriaIcono">
                                         <option value="fa-cube">Cubo</option>
                                         <option value="fa-boxes-stacked">Cajas</option>
@@ -210,21 +213,18 @@ function showCategoriaModal() {
                                     </select>
                                 </div>
                             </div>
-                            
-                            <div class="color-picker-container">
+                            <div class="color-picker-container" style="display: flex; gap: 12px; margin-top: 10px;">
                                 <div class="color-picker">
                                     <label>Fondo: </label>
                                     <input type="color" id="colorFondo" value="#f3f4f6">
                                 </div>
-                                
                                 <div class="color-picker">
                                     <label>Icono: </label>
                                     <input type="color" id="colorIcono" value="#374151">
                                 </div>
                             </div>
                         </div>
-                        
-                        <div class="form-actions">
+                        <div class="form-actions" style="margin-top: 18px; display: flex; gap: 10px; justify-content: flex-end;">
                             <button type="submit" class="btn-primary" id="guardarCategoriaBtn">
                                 <i class="fa-solid fa-save"></i> Guardar Categoría
                             </button>
@@ -233,41 +233,38 @@ function showCategoriaModal() {
                             </button>
                         </div>
                     </form>
-                    
-                    <div class="categorias-list" id="categoriasExistentes">
+                    <div class="categorias-list" id="categoriasExistentes" style="margin-top: 18px;">
                         <!-- Las categorías se cargarán dinámicamente -->
                     </div>
                 </div>
             </div>
         `;
-        
         document.body.insertAdjacentHTML('beforeend', categoriaModalHTML);
-        
+        categoriaModal = document.getElementById('categoriaModal');
+
         // Configurar eventos del modal
         document.getElementById('closeCategoriaModal').addEventListener('click', closeCategoriaModal);
         document.getElementById('cancelarCategoriaBtn').addEventListener('click', closeCategoriaModal);
         document.getElementById('categoriaForm').addEventListener('submit', handleCategoriaSubmit);
-        
-        // Configurar cambios en el selector de ícono
         document.getElementById('categoriaIcono').addEventListener('change', function() {
             document.getElementById('iconoSeleccionado').className = 'fa-solid ' + this.value;
         });
-        
-        // Configurar cambios en los colores
         document.getElementById('colorFondo').addEventListener('input', function() {
             document.getElementById('iconoPreview').style.backgroundColor = this.value;
         });
-        
         document.getElementById('colorIcono').addEventListener('input', function() {
             document.getElementById('iconoSeleccionado').style.color = this.value;
         });
+    } else {
+        if (categoriaModal.parentElement !== document.body) {
+            document.body.appendChild(categoriaModal);
+        }
     }
-    
+
     // Cargar categorías existentes
     cargarCategoriasExistentes();
-    
+
     // Mostrar el modal
-    const categoriaModal = document.getElementById('categoriaModal');
     categoriaModal.style.display = 'flex';
 }
 
@@ -565,13 +562,43 @@ function cerrarModalInsumo() {
 
 // Funciones para editar y eliminar insumos
 function editarInsumo(id) {
+    console.log(`Iniciando edición del insumo con ID: ${id}`);
+    
+    // Mostrar indicador de carga
+    const loadingIndicator = document.createElement('div');
+    loadingIndicator.id = 'loading-indicator';
+    loadingIndicator.innerHTML = `
+        <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+                    background: rgba(255,255,255,0.8); z-index: 9999; display: flex; 
+                    justify-content: center; align-items: center;">
+            <div style="background: white; padding: 20px; border-radius: 5px; box-shadow: 0 0 10px rgba(0,0,0,0.1);">
+                <p>Cargando datos del insumo...</p>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(loadingIndicator);
+
     fetch(`/insumos/${id}/`)
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`Error HTTP: ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
+            // Remover indicador de carga
+            document.body.removeChild(loadingIndicator);
+            
             if (data.status === 'success') {
                 const insumo = data.insumo;
                 
-                document.getElementById('insumoId').value = insumo.id;
+                console.log(`Cargando datos del insumo en el formulario:`, insumo);
+                
+                // Asegurar que el ID se establezca correctamente y no sea una cadena vacía
+                document.getElementById('insumoId').value = insumo.id.toString();
+                console.log(`ID configurado en el formulario: ${document.getElementById('insumoId').value}`);
+                
+                // Configurar el resto de campos
                 document.getElementById('insumoNombre').value = insumo.nombre;
                 document.getElementById('insumoUnidad').value = insumo.unidad;
                 document.getElementById('insumoCategoria').value = insumo.categoria;
@@ -586,12 +613,17 @@ function editarInsumo(id) {
                     inicializarSelectConIconos('insumoCategoria');
                 }, 100);
             } else {
-                alert('Error al cargar los datos del insumo');
+                alert(`Error al cargar los datos del insumo: ${data.message || 'Error desconocido'}`);
             }
         })
         .catch(error => {
+            // Remover indicador de carga en caso de error
+            if (document.getElementById('loading-indicator')) {
+                document.body.removeChild(loadingIndicator);
+            }
+            
             console.error('Error:', error);
-            alert('Error al cargar los datos del insumo');
+            alert(`Error al cargar los datos del insumo: ${error.message}`);
         });
 }
 
@@ -630,6 +662,18 @@ async function handleInsumoSubmit(event) {
             throw new Error('El nombre del insumo es requerido');
         }
 
+        // Obtener ID y determinar si estamos editando
+        const insumoId = document.getElementById('insumoId').value;
+        console.log(`ID del insumo obtenido del formulario: "${insumoId}"`);
+        
+        const isEditing = !!insumoId;
+        console.log(`¿Estamos en modo edición? ${isEditing}`);
+        
+        // VALIDACIÓN IMPORTANTE
+        if (isEditing && (!insumoId || insumoId === '')) {
+            throw new Error('Error interno: ID de insumo no válido para edición');
+        }
+
         const formData = {
             nombre: nombre,
             unidad: document.getElementById('insumoUnidad').value.trim(),
@@ -639,16 +683,19 @@ async function handleInsumoSubmit(event) {
             minimo: parseInt(document.getElementById('insumoMinimo').value) || 0
         };
         
-        const insumoId = document.getElementById('insumoId').value;
-        const isEditing = !!insumoId;
-        
+        // Si estamos editando, incluir el ID en los datos
         if (isEditing) {
-            formData.id = insumoId;
+            formData.id = parseInt(insumoId);
         }
         
+        // Construir URL según modo
+        const url = isEditing ? `/insumos/${insumoId}/` : '/insumos/';
         const method = isEditing ? 'PUT' : 'POST';
         
-        const response = await fetch('/insumos/', {
+        console.log(`Modo: ${isEditing ? 'Edición' : 'Creación'}, ID: "${insumoId}"`);
+        console.log(`Enviando solicitud ${method} a ${url} con datos:`, formData);
+        
+        const response = await fetch(url, {
             method: method,
             headers: {
                 'Content-Type': 'application/json',
@@ -657,7 +704,26 @@ async function handleInsumoSubmit(event) {
             body: JSON.stringify(formData)
         });
         
-        const data = await response.json();
+        // Verificar si la respuesta es OK antes de procesarla
+        if (!response.ok) {
+            // Para errores HTTP, mostrar el estado
+            throw new Error(`Error del servidor: ${response.status} ${response.statusText}`);
+        }
+        
+        const responseText = await response.text();
+        console.log(`Respuesta del servidor:`, responseText);
+        
+        // Solo intentar parsear como JSON si hay contenido
+        if (!responseText.trim()) {
+            throw new Error('Respuesta vacía del servidor');
+        }
+        
+        let data;
+        try {
+            data = JSON.parse(responseText);
+        } catch (error) {
+            throw new Error(`Error al procesar la respuesta: ${responseText.substring(0, 100)}...`);
+        }
         
         if (data.status === 'success') {
             cerrarModalInsumo();
@@ -667,7 +733,7 @@ async function handleInsumoSubmit(event) {
             throw new Error(data.message || 'Error al procesar la solicitud');
         }
     } catch (error) {
-        console.error('Error:', error);
+        console.error('Error completo:', error);
         alert(`Error: ${error.message}`);
     }
 }

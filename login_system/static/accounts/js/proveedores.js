@@ -55,10 +55,10 @@ async function loadProveedoresContent() {
                         <i class="fa-solid fa-search" style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: #64748b; font-size: 1rem;"></i>
                         <input type="text" id="searchProveedor" placeholder="Buscar proveedor..." style="width: 100%; padding: 14px 14px 14px 45px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 1rem; box-shadow: 0 2px 5px rgba(0,0,0,0.03); transition: all 0.2s ease; color: #1e293b; font-weight: 500; background: white;">
                     </div>
-                    <select id="filterCategoria" class="proveedores-select" style="padding: 12px 18px; border: 1px solid #e2e8f0; border-radius: 8px; background-color: white; min-width: 190px; font-size: 1rem; color: #1e293b; font-weight: 500; box-shadow: 0 2px 5px rgba(0,0,0,0.03); background-image: url('data:image/svg+xml;utf8,<svg fill=\\'%2364748b\\' height=\\'24\\' viewBox=\\'0 0 24 24\\' width=\\'24\\' xmlns=\\'http://www.w3.org/2000/svg\\'><path d=\\'M7 10l5 5 5-5z\\'/><path d=\\'M0 0h24v24H0z\\' fill=\\'none\\'/></svg>'); background-repeat: no-repeat; background-position: right 12px center; -webkit-appearance: none; -moz-appearance: none; appearance: none; padding-right: 36px;">
+                    <select id="filterCategoria" class="proveedores-select" style="padding: 12px 18px; border: 1px solid #e2e8f0; border-radius: 8px; background-color: #f8fafc; min-width: 190px; font-size: 1rem; color: #1e293b; font-weight: 500; box-shadow: 0 2px 5px rgba(0,0,0,0.03); background-image: url('data:image/svg+xml;utf8,<svg fill=\\'%2364748b\\' height=\\'24\\' viewBox=\\'0 0 24 24\\' width=\\'24\\' xmlns=\\'http://www.w3.org/2000/svg\\'><path d=\\'M7 10l5 5 5-5z\\'/><path d=\\'M0 0h24v24H0z\\' fill=\\'none\\'/></svg>'); background-repeat: no-repeat; background-position: right 12px center; -webkit-appearance: none; -moz-appearance: none; appearance: none; padding-right: 36px;">
                         <option value="todas">Todas las categorías</option>
                     </select>
-                    <select id="filterEstado" class="proveedores-select" style="padding: 12px 18px; border: 1px solid #e2e8f0; border-radius: 8px; background-color: white; min-width: 180px; font-size: 1rem; color: #1e293b; font-weight: 500; box-shadow: 0 2px 5px rgba(0,0,0,0.03); background-image: url('data:image/svg+xml;utf8,<svg fill=\\'%2364748b\\' height=\\'24\\' viewBox=\\'0 0 24 24\\' width=\\'24\\' xmlns=\\'http://www.w3.org/2000/svg\\'><path d=\\'M7 10l5 5 5-5z\\'/><path d=\\'M0 0h24v24H0z\\' fill=\\'none\\'/></svg>'); background-repeat: no-repeat; background-position: right 12px center; -webkit-appearance: none; -moz-appearance: none; appearance: none; padding-right: 36px;">
+                    <select id="filterEstado" class="proveedores-select" style="padding: 12px 18px; border: 1px solid #e2e8f0; border-radius: 8px; background-color: #f8fafc; min-width: 180px; font-size: 1rem; color: #1e293b; font-weight: 500; box-shadow: 0 2px 5px rgba(0,0,0,0.03); background-image: url('data:image/svg+xml;utf8,<svg fill=\\'%2364748b\\' height=\\'24\\' viewBox=\\'0 0 24 24\\' width=\\'24\\' xmlns=\\'http://www.w3.org/2000/svg\\'><path d=\\'M7 10l5 5 5-5z\\'/><path d=\\'M0 0h24v24H0z\\' fill=\\'none\\'/></svg>'); background-repeat: no-repeat; background-position: right 12px center; -webkit-appearance: none; -moz-appearance: none; appearance: none; padding-right: 36px;">
                         <option value="todos">Todos los estados</option>
                         <option value="activo">Activos</option>
                         <option value="inactivo">Inactivos</option>
@@ -175,7 +175,7 @@ function renderProveedoresTable(proveedores) {
 function createProveedorModalHtml() {
     return `
     <div id="proveedorModal" class="modal" style="display:none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.6); align-items: center; justify-content: center;">
-        <div class="modal-content" style="background-color: #fff; padding: 30px; border-radius: 12px; width: 90%; max-width: 700px; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2); position: relative;">
+        <div class="modal-content" style="background-color: #fff; padding: 40px; border-radius: 16px; width: 95%; max-width: 1200px; max-height: 95vh; min-height: 80vh; overflow-y: auto; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3); position: relative; margin: 2.5vh auto;">
             <span class="close-modal" id="closeProveedorModal" style="position: absolute; right: 20px; top: 20px; font-size: 28px; cursor: pointer; color: #6b7280;">&times;</span>
             <h2 id="proveedorModalTitle" style="color: #1f2937; margin-top: 0; margin-bottom: 24px; font-size: 1.5rem; border-bottom: 1px solid #e5e7eb; padding-bottom: 12px;">Nuevo Proveedor</h2>
             <form id="proveedorForm" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px;">
@@ -653,6 +653,7 @@ function showProductosModal(productos, proveedorNombre, proveedorId, insumos = [
                             <th style="text-align: left; padding: 16px; border-bottom: 1px solid #e2e8f0; background-color: #f8fafc; color: #475569; font-weight: 600; font-size: 0.875rem;">Nombre</th>
                             <th style="text-align: left; padding: 16px; border-bottom: 1px solid #e2e8f0; background-color: #f8fafc; color: #475569; font-weight: 600; font-size: 0.875rem;">Categoría</th>
                             <th style="text-align: left; padding: 16px; border-bottom: 1px solid #e2e8f0; background-color: #f8fafc; color: #475569; font-weight: 600; font-size: 0.875rem;">Costo</th>
+                            <th style="text-align: left; padding: 16px; border-bottom: 1px solid #e2e8f0; background-color: #f8fafc; color: #475569; font-weight: 600; font-size: 0.875rem;">Unidad</th>
                             <th style="text-align: center; padding: 16px; border-bottom: 1px solid #e2e8f0; background-color: #f8fafc; color: #475569; font-weight: 600; font-size: 0.875rem;">Es Principal</th>
                         </tr>
                     </thead>
@@ -662,6 +663,7 @@ function showProductosModal(productos, proveedorNombre, proveedorId, insumos = [
                                 <td style="padding: 14px 16px; border-bottom: 1px solid #e2e8f0; color: #1e293b; font-weight: 500;">${prod.nombre}</td>
                                 <td style="padding: 14px 16px; border-bottom: 1px solid #e2e8f0; color: #475569;">${prod.categoria || 'No especificada'}</td>
                                 <td style="padding: 14px 16px; border-bottom: 1px solid #e2e8f0; color: #1e293b; font-weight: 500;">$${prod.costo_unitario.toFixed(2)}</td>
+                                <td style="padding: 14px 16px; border-bottom: 1px solid #e2e8f0; color: #475569;">${prod.unidad || 'N/A'}</td>
                                 <td style="padding: 14px 16px; border-bottom: 1px solid #e2e8f0; text-align: center;">
                                     <span style="display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 0.85rem; font-weight: 500; min-width: 90px; text-align: center; background-color: ${prod.es_principal ? '#ecfdf5' : '#f1f5f9'}; color: ${prod.es_principal ? '#047857' : '#64748b'};">
                                         ${prod.es_principal ? 'Principal' : 'Secundario'}
@@ -682,25 +684,88 @@ function showProductosModal(productos, proveedorNombre, proveedorId, insumos = [
     const insumosContainer = document.getElementById('insumosListContainer');
     if (insumos && insumos.length > 0) {
         insumosContainer.innerHTML = insumos.map(insumo => `
-            <div class="insumo-item" style="display: flex; align-items: center; padding: 12px 16px; border-bottom: 1px solid #e2e8f0; transition: background-color 0.2s; background-color: white;">
-                <label class="checkbox-container" style="display: flex; align-items: center; cursor: pointer; width: 100%;">
-                    <input type="checkbox" class="insumo-checkbox" value="${insumo.id}" style="margin-right: 12px; width: 16px; height: 16px; accent-color: #2563eb;">
-                    <div style="flex-grow: 1;">
-                        <div class="insumo-nombre" style="font-weight: 500; color: #1e293b;">${insumo.nombre}</div>
-                        <div style="font-size: 0.85rem; color: #64748b;">${insumo.categoria} - ${insumo.unidad}</div>
-                    </div>
-                    <div style="margin-left: 10px; background-color: #f1f5f9; padding: 4px 10px; border-radius: 20px; font-size: 0.85rem;">
-                        <span style="font-weight: 500; color: #475569;">Stock: ${insumo.stock}</span>
-                    </div>
-                </label>
+    <div class="insumo-item" style="display: flex; align-items: center; padding: 16px 20px; border-bottom: 1px solid #f1f5f9; transition: all 0.2s ease; background-color: white; gap: 20px; border-radius: 8px; margin-bottom: 4px;">
+        <!-- Checkbox minimalista -->
+        <div style="display: flex; align-items: center; margin-right: 8px;">
+            <input type="checkbox" class="insumo-checkbox" value="${insumo.id}" 
+                style="width: 18px; height: 18px; accent-color: #6366f1; cursor: pointer; border-radius: 3px;" 
+                onchange="toggleCostoInput(this)">
+        </div>
+        
+        <!-- Información del insumo -->
+        <div style="flex-grow: 1; min-width: 0; margin-right: 20px;">
+            <div class="insumo-nombre" style="font-weight: 600; color: #1f2937; font-size: 0.95rem; margin-bottom: 6px;">${insumo.nombre}</div>
+        </div>
+        
+        <!-- Contenedor de etiquetas minimalistas con mayor separación -->
+        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: nowrap; margin-right: 20px;">
+            <!-- Etiqueta de Categoría -->
+            <div style="background-color: #f3f4f6; color: #6b7280; padding: 4px 10px; border-radius: 14px; font-size: 0.75rem; font-weight: 500; display: flex; align-items: center; gap: 5px; white-space: nowrap; border: 1px solid #e5e7eb; min-width: 80px; justify-content: center;">
+                <i class="fa-solid fa-tag" style="font-size: 0.65rem;"></i>
+                <span>${insumo.categoria}</span>
             </div>
-        `).join('');
+            
+            <!-- Etiqueta de Unidad -->
+            <div style="background-color: #f0fdf4; color: #16a34a; padding: 4px 10px; border-radius: 14px; font-size: 0.75rem; font-weight: 500; display: flex; align-items: center; gap: 5px; white-space: nowrap; border: 1px solid #dcfce7; min-width: 70px; justify-content: center;">
+                <i class="fa-solid fa-balance-scale" style="font-size: 0.65rem;"></i>
+                <span>${insumo.unidad}</span>
+            </div>
+            
+            <!-- Etiqueta de Stock -->
+            <div style="background-color: #fef3c7; color: #d97706; padding: 4px 10px; border-radius: 14px; font-size: 0.75rem; font-weight: 500; display: flex; align-items: center; gap: 5px; white-space: nowrap; border: 1px solid #fde68a; min-width: 80px; justify-content: center;">
+                <i class="fa-solid fa-cubes" style="font-size: 0.65rem;"></i>
+                <span>${insumo.stock}</span>
+            </div>
+        </div>
+        
+        <!-- Input de costo minimalista -->
+        <div style="min-width: 130px;">
+            <div class="costo-container" style="display: flex; align-items: center; background-color: #f9fafb; padding: 0 10px; border-radius: 8px; border: 1px solid #e5e7eb; transition: all 0.2s ease;">
+                <span style="color: #9ca3af; margin-right: 4px; font-weight: 500; font-size: 0.9rem;">$</span>
+                <input type="number" class="insumo-costo" step="0.01" min="0" placeholder="0.00" disabled 
+                    style="padding: 10px 0; border: none; outline: none; width: 100%; background-color: transparent; font-size: 0.9rem; color: #1f2937; font-weight: 500;" 
+                    data-insumo-id="${insumo.id}">
+            </div>
+        </div>
+    </div>
+`).join('');
     } else {
         insumosContainer.innerHTML = `
-            <div style="padding: 30px 20px; text-align: center; color: #64748b;">
-                <i class="fa-solid fa-cubes" style="font-size: 1.5rem; margin-bottom: 10px; color: #94a3b8;"></i>
-                <p style="margin: 0;">No hay insumos disponibles.</p>
-            </div>`;
+        <div style="padding: 40px 20px; text-align: center; color: #64748b; background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border-radius: 12px; border: 2px dashed #cbd5e1;">
+            <div style="margin-bottom: 16px; color: #94a3b8;">
+                <i class="fa-solid fa-cubes" style="font-size: 3rem;"></i>
+            </div>
+            <h3 style="margin: 0 0 8px 0; color: #475569; font-weight: 600;">No hay insumos disponibles</h3>
+            <p style="margin: 0; font-size: 0.95rem;">Agrega insumos al sistema para poder asignarlos a proveedores.</p>
+        </div>`;
+    }
+    
+    // Añadir mensaje de instrucción
+    document.getElementById('insumosContent').insertAdjacentHTML('afterbegin', `
+        <div style="margin-bottom: 15px; padding: 10px; background-color: #eff6ff; border-radius: 6px; border-left: 4px solid #3b82f6;">
+            <p style="margin: 0; color: #1e40af; font-size: 0.95rem;">
+                <i class="fa-solid fa-info-circle" style="margin-right: 5px;"></i>
+                Selecciona los insumos que provee este proveedor y asigna sus costos unitarios. El costo se habilita automáticamente al marcar la casilla.
+            </p>
+        </div>
+    `);
+    
+    // Prerellenar costos existentes si el insumo ya está asignado al proveedor
+    if (productos && productos.length > 0) {
+        setTimeout(() => {
+            document.querySelectorAll('.insumo-item').forEach(item => {
+                const checkbox = item.querySelector('.insumo-checkbox');
+                const insumoId = checkbox.value;
+                const existingProducto = productos.find(p => p.insumo_id == insumoId);
+                
+                if (existingProducto) {
+                    checkbox.checked = true;
+                    const costoInput = item.querySelector('.insumo-costo');
+                    costoInput.value = existingProducto.costo_unitario.toFixed(2);
+                    toggleCostoInput(checkbox);
+                }
+            });
+        }, 100);
     }
     
     // Mostrar modal
@@ -710,15 +775,32 @@ function showProductosModal(productos, proveedorNombre, proveedorId, insumos = [
 // Función para asignar insumos al proveedor
 async function asignarInsumosAProveedor(proveedorId) {
     try {
-        // Obtener los insumos seleccionados
-        const insumosSeleccionados = Array.from(document.querySelectorAll('.insumo-checkbox:checked')).map(checkbox => checkbox.value);
+        // Crear un array para almacenar los datos de los insumos seleccionados
+        const insumosData = [];
         
-        if (insumosSeleccionados.length === 0) {
+        // Recorrer todos los checkboxes seleccionados
+        document.querySelectorAll('.insumo-checkbox:checked').forEach(checkbox => {
+            const insumoId = checkbox.value;
+            const costoInput = checkbox.closest('.insumo-item').querySelector('.insumo-costo');
+            const costo = parseFloat(costoInput.value) || 0;
+            
+            // Validar que el costo sea un número válido
+            if (isNaN(costo) || costo < 0) {
+                throw new Error(`Por favor ingresa un costo válido para todos los insumos seleccionados`);
+            }
+            
+            insumosData.push({
+                id: insumoId,
+                costo: costo
+            });
+        });
+        
+        if (insumosData.length === 0) {
             showNotification('Selecciona al menos un insumo para asignar', 'error');
             return;
         }
         
-        // Enviar la solicitud para asignar insumos
+        // Enviar la solicitud para asignar insumos con sus costos
         const response = await fetch(`/api/proveedores/${proveedorId}/asignar-insumos/`, {
             method: 'POST',
             headers: {
@@ -726,7 +808,7 @@ async function asignarInsumosAProveedor(proveedorId) {
                 'X-CSRFToken': getCsrfToken()
             },
             body: JSON.stringify({
-                insumos: insumosSeleccionados
+                insumos: insumosData
             })
         });
         
@@ -781,15 +863,63 @@ function showNotification(message, type = 'success') {
     }, 3000);
 }
 
-// Inicializar la gestión de proveedores al cargar el DOM
-document.addEventListener('DOMContentLoaded', function() {
-    // Buscar el enlace de proveedores en el menú
-    const proveedoresLink = document.getElementById('proveedores');
-    if (proveedoresLink) {
-        proveedoresLink.addEventListener('click', function(e) {
-            e.preventDefault();
-            loadProveedoresContent();
-        });
+// Función mejorada para activar/desactivar el campo de costo (estilo minimalista)
+function toggleCostoInput(checkbox) {
+    const insumoItem = checkbox.closest('.insumo-item');
+    const costoInput = insumoItem.querySelector('.insumo-costo');
+    const costoContainer = insumoItem.querySelector('.costo-container');
+    
+    if (checkbox.checked) {
+        // Habilitar y dar estilo activo minimalista
+        costoInput.disabled = false;
+        costoInput.focus();
+        costoContainer.style.backgroundColor = '#ffffff';
+        costoContainer.style.borderColor = '#6366f1';
+        costoContainer.style.boxShadow = '0 0 0 2px rgba(99, 102, 241, 0.1)';
+        
+        // Efecto sutil en toda la fila
+        insumoItem.style.backgroundColor = '#fafbff';
+        insumoItem.style.borderColor = '#e0e7ff';
+        insumoItem.style.transform = 'translateY(-0.5px)';
+    } else {
+        // Deshabilitar y restaurar estilo
+        costoInput.disabled = true;
+        costoInput.value = '';
+        costoContainer.style.backgroundColor = '#f9fafb';
+        costoContainer.style.borderColor = '#e5e7eb';
+        costoContainer.style.boxShadow = 'none';
+        
+        // Restaurar estilo de la fila
+        insumoItem.style.backgroundColor = '#ffffff';
+        insumoItem.style.borderColor = '#f1f5f9';
+        insumoItem.style.transform = 'translateY(0)';
     }
-});
-window.loadProveedoresContent = loadProveedoresContent;
+    
+    // Actualizar contador de seleccionados
+    updateSelectedCounter();
+}
+
+// Función para actualizar el contador con estilo minimalista
+function updateSelectedCounter() {
+    const selectedCount = document.querySelectorAll('.insumo-checkbox:checked').length;
+    const counterElement = document.getElementById('selectedCounter');
+    const insumosListElement = document.querySelector('.insumos-list');
+    
+    // If the counter already exists, just update it
+    if (counterElement) {
+        counterElement.textContent = selectedCount;
+        counterElement.parentElement.style.display = selectedCount > 0 ? 'block' : 'none';
+    } 
+    // Otherwise create it, but only if the insumos-list container exists
+    else if (insumosListElement) {
+        const counterHtml = `
+            <div id="selectedCounterContainer" style="margin: 12px 0; text-align: right; ${selectedCount > 0 ? '' : 'display: none;'}">
+                <div style="display: inline-flex; align-items: center; background-color: #6366f1; color: white; padding: 6px 12px; border-radius: 16px; font-size: 0.8rem; font-weight: 500; box-shadow: 0 2px 4px rgba(99, 102, 241, 0.2);">
+                    <i class="fa-solid fa-check-circle" style="margin-right: 6px; font-size: 0.8rem;"></i>
+                    <span id="selectedCounter">${selectedCount}</span> seleccionado${selectedCount > 1 ? 's' : ''}
+                </div>
+            </div>
+        `;
+        insumosListElement.insertAdjacentHTML('afterend', counterHtml);
+    }
+}
