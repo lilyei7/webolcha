@@ -20,9 +20,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'tu-clave-secreta'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False  # Cambia a False en producción
+DEBUG = True  # Set to True during development to serve static files
 
-ALLOWED_HOSTS = ['punto1208.com', 'www.punto1208.com', '31.97.42.133', 'localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '*']  # Cambia esto según tu dominio
 
 # Application definition
 INSTALLED_APPS = [
@@ -102,11 +102,17 @@ USE_I18N = True
 USE_TZ = True
 
 # Configuración de archivos estáticos
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'static')
+    os.path.join(BASE_DIR, 'static'),
+    # Use os.path.join to handle path separators properly
+    os.path.join(BASE_DIR, 'accounts', 'static'),  # Fixed path
 ]
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+# Media files (user uploads)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # Custom user model
 AUTH_USER_MODEL = 'accounts.User'

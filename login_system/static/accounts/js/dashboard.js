@@ -28,6 +28,10 @@ let horariosTemporales = {
 document.addEventListener('DOMContentLoaded', function() {
     console.log("Inicializando componentes de la interfaz...");
     
+    // Inicialización de los permisos de usuario
+    initializeUserPermissions();
+    console.log("✓ Permisos de usuario inicializados");
+    
     // NO inicializar el menú de inventario aquí - dejarlo para menu.js
     // setupInventoryMenuAnimation();
     console.log("✓ Menú de inventario se inicializa en menu.js");
@@ -648,4 +652,63 @@ async function guardarHorarios() {
     }
 
     closeHorariosModal();
+}
+
+// Función para inicializar los permisos del usuario
+function initializeUserPermissions() {
+    console.log("Inicializando permisos de usuario...");
+    
+    // Verificar si los permisos ya están cargados desde el servidor
+    if (typeof userPermissionData !== 'undefined') {
+        window.userPermissions = {
+            admin: userPermissionData.admin === true,
+            gerente: userPermissionData.gerente === true,
+            superuser: userPermissionData.superuser === true
+        };
+        console.log("Permisos cargados desde datos del servidor:", window.userPermissions);
+    } else {
+        // Si no hay datos del servidor, intentamos obtener permisos del elemento en el DOM
+        const permissionsElement = document.getElementById('user-permissions-data');
+        if (permissionsElement) {
+            try {
+                // Limpiar el texto para asegurar que es JSON válido
+                const permissionsText = permissionsElement.textContent.trim();
+                console.log("JSON de permisos a parsear:", permissionsText);
+                
+                const permissionsData = JSON.parse(permissionsText);
+                window.userPermissions = {
+                    admin: permissionsData.admin === true,
+                    gerente: permissionsData.gerente === true,
+                    superuser: permissionsData.superuser === true,
+                    sucursales: permissionsData.sucursales || []
+                };
+                console.log("Permisos cargados desde elemento DOM:", window.userPermissions);
+            } catch (e) {
+                console.error("Error al parsear permisos:", e);
+                console.error("Contenido del elemento:", permissionsElement.textContent);
+                fallbackPermissions();
+            }
+        } else {
+            console.warn("No se encontró el elemento de permisos en el DOM");
+            fallbackPermissions();
+        }
+    }
+    
+    // Para desarrollo, forzar admin en caso de error
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        if (!window.userPermissions.admin && !window.userPermissions.superuser) {
+            console.warn("⚠️ Entorno de desarrollo detectado - Forzando permisos de administrador para pruebas");
+            window.userPermissions.admin = true;
+        }
+    }
+}
+
+// Función para establecer permisos predeterminados
+function fallbackPermissions() {
+    console.warn("No se pudieron cargar los permisos, usando valores predeterminados");
+    window.userPermissions = {
+        admin: false,  // Por defecto, no es administrador
+        gerente: false,
+        superuser: false
+    };
 }

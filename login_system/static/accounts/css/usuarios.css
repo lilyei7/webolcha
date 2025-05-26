@@ -125,6 +125,13 @@
     color: #1D4ED8;
 }
 
+/* AGREGAR estos estilos para administrador */
+.role-administrador {
+    background: #EFF6FF;
+    color: #1D4ED8;
+    border: 1px solid #DBEAFE;
+}
+
 .role-gerente {
     background: #F0FDF4;
     color: #15803D;
@@ -194,6 +201,14 @@
     color: #3B82F6;
 }
 
+/* AGREGAR también aquí para consistencia */
+.role-administrador {
+    background: rgba(59, 130, 246, 0.15);
+    color: #1D4ED8;
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    font-weight: 600;
+}
+
 .role-gerente {
     background: rgba(16, 185, 129, 0.1);
     color: #10B981;
@@ -235,6 +250,16 @@
     gap: 0.5rem;
     font-size: 0.9rem;
     transition: all 0.3s ease;
+}
+
+.btn-disabled {
+    background-color: #e2e8f0;
+    color: #94a3b8;
+    cursor: not-allowed;
+    border: none;
+    padding: 0.5rem;
+    border-radius: 0.375rem;
+    transition: all 0.2s;
 }
 
 /* Estilos para el modal */
@@ -462,4 +487,45 @@
 
 .modal-content::-webkit-scrollbar-thumb:hover {
     background: #9CA3AF;
+}
+
+.inactive-user {
+    opacity: 0.7;
+    border: 1px solid #e2e8f0;
+}
+
+.user-inactive {
+    display: inline-block;
+    background-color: #fee2e2;
+    color: #dc2626;
+    font-size: 0.75rem;
+    padding: 0.125rem 0.5rem;
+    border-radius: 9999px;
+    margin-left: 0.5rem;
+    font-weight: 500;
+}
+
+/* Estilos para campos deshabilitados en formularios */
+.disabled-select {
+    background-color: #f3f4f6;
+    border-color: #d1d5db;
+    color: #6b7280;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+/* Opcional: Mostrar un indicador visual de campo protegido */
+.disabled-select::after {
+    content: "🔒";
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.optional {
+    font-weight: normal;
+    font-size: 0.8rem;
+    color: #6B7280;
+    font-style: italic;
 }

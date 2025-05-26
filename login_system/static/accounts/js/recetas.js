@@ -141,9 +141,17 @@ function asegurarFuncionesCRUD() {
         
         // Cargar el script dinámicamente
         const script = document.createElement('script');
-        script.src = '/static/accounts/js/crudRecetas.js';
+        script.src = '/static/accounts/js/crudRecetas.js'; // Usar path absoluto
         script.onload = function() {
             console.log('crudRecetas.js cargado correctamente');
+            
+            // Verificar si también necesitamos insumosRecetas.js
+            if (typeof window.agregarInsumo !== 'function') {
+                console.log('Cargando insumosRecetas.js dinámicamente...');
+                const insumosScript = document.createElement('script');
+                insumosScript.src = '/static/accounts/js/insumosRecetas.js';
+                document.head.appendChild(insumosScript);
+            }
         };
         document.head.appendChild(script);
     }

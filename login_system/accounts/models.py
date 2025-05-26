@@ -1,10 +1,12 @@
 from django.db import models
-from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import AbstractUser, Group, Permission
+from django.utils.translation import gettext_lazy as _
 from decimal import Decimal
 
 class User(AbstractUser):
     last_login_attempt = models.DateTimeField(null=True, blank=True)
     login_attempts = models.IntegerField(default=0)
+    telefono = models.CharField(max_length=20, blank=True, null=True, verbose_name="Teléfono")
 
     groups = models.ManyToManyField(
         'auth.Group',
@@ -21,6 +23,27 @@ class User(AbstractUser):
         verbose_name='user permissions',
         help_text='Specific permissions for this user.'
     )
+
+    # Asegurar que la relación con sucursales está correctamente definida
+    sucursales = models.ManyToManyField(
+        'Sucursal', 
+        related_name='usuarios',
+        blank=True,
+        verbose_name='Sucursales asignadas'
+    )
+    
+    # Propiedades de roles para fácil verificación
+    @property
+    def is_admin(self):
+        return self.is_superuser or self.groups.filter(name__in=['Administrador', 'Admin']).exists()
+    
+    @property
+    def is_gerente(self):
+        return self.groups.filter(name='Gerente').exists() or self.is_admin
+        
+    @property
+    def is_empleado(self):
+        return True  # Todos los usuarios autenticados son al menos empleados
 
     class Meta:
         db_table = 'users'
@@ -281,3 +304,51 @@ class InsumoCompuestoReceta(models.Model):
         
     def __str__(self):
         return f"{self.receta.nombre} - {self.insumo_compuesto.nombre}"
+
+class MovimientoInventario(models.Model):
+    TIPO_CHOICES = [
+        ('entrada', 'Entrada'),
+        ('salida', 'Salida'),
+    ]
+    
+    MOTIVO_CHOICES = [
+        ('compra', 'Compra'),
+        ('devolucion', 'Devolución'),
+        ('ajuste_inventario', 'Ajuste de inventario'),
+        ('traspaso', 'Traspaso entre sucursales'),
+        ('caducidad', 'Caducidad'),
+        ('consumo_interno', 'Consumo interno'),
+        ('venta', 'Venta'),
+        ('merma', 'Merma'),
+        ('otro', 'Otro'),
+    ]
+    
+    tipo = models.CharField(max_length=20, choices=TIPO_CHOICES)
+    insumo = models.ForeignKey(Insumo, on_delete=models.CASCADE)
+    cantidad = models.DecimalField(max_digits=10, decimal_places=2)
+    fecha_hora = models.DateTimeField(auto_now_add=True)
+    motivo = models.CharField(max_length=100, choices=MOTIVO_CHOICES)
+    sucursal = models.ForeignKey(Sucursal, on_delete=models.CASCADE)
+    usuario = models.ForeignKey(User, on_delete=models.CASCADE)
+    proveedor = models.ForeignKey(Proveedor, null=True, blank=True, on_delete=models.SET_NULL)
+    costo_unitario = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    observaciones = models.TextField(blank=True, null=True)
+    
+    # Añadir este nuevo campo para la sucursal de destino
+    sucursal_destino = models.ForeignKey(
+        Sucursal, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
+        related_name='traspasos_destino'
+    )
+    
+    # Nuevo campo para estado
+    estado = models.CharField(
+        max_length=20, 
+        choices=[('activo', 'Activo'), ('cancelado', 'Cancelado')], 
+        default='activo'
+    )
+
+    class Meta:
+        ordering = ['-fecha_hora']

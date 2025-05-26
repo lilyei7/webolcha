@@ -636,18 +636,37 @@ function eliminarInsumo(id) {
                 'X-CSRFToken': getCookie('csrftoken')
             }
         })
-            .then(response => response.json())
+            .then(response => {
+                // Check if response is not OK
+                if (!response.ok) {
+                    return response.json().then(data => {
+                        throw new Error(data.message || 'Error al eliminar el insumo');
+                    });
+                }
+                return response.json();
+            })
             .then(data => {
                 if (data.status === 'success') {
-                    loadInsumosContent();
-                    alert('Insumo eliminado correctamente');
+                    alert('Insumo eliminado exitosamente');
+                    // Reload insumos to refresh the list
+                    fetch('/insumos/')
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.status === 'success') {
+                                renderizarTablaInsumos(data.insumos);
+                            }
+                        });
                 } else {
-                    alert(data.message || 'Error al eliminar el insumo');
+                    alert(`Error: ${data.message || 'Ocurrió un error al eliminar el insumo'}`);
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('Error al eliminar el insumo');
+                if (error.message.includes('protected foreign keys')) {
+                    alert('Este insumo no puede ser eliminado porque está siendo utilizado en una o más recetas. Por favor, primero elimine el insumo de todas las recetas donde se utiliza.');
+                } else {
+                    alert(`Error al eliminar el insumo: ${error.message}`);
+                }
             });
     }
 }

@@ -8,53 +8,21 @@ function loadUsuariosContent() {
                     <i class="fa-solid fa-user-plus"></i> Nuevo Usuario
                 </button>
             </div>
-
-            <div class="usuarios-filters">
-                <div class="search-box">
-                    <input type="text" id="searchUser" placeholder="Buscar usuario...">
-                    <i class="fa-solid fa-search"></i>
-                </div>
-                <div class="role-filter">
-                    <select id="filterRole">
-                        <option value="todos">
-                            <i class="fa-solid fa-users"></i>
-                            Todos los roles
-                        </option>
-                        <option value="admin">
-                            <i class="fa-solid fa-user-shield"></i>
-                            Administrador
-                        </option>
-                        <option value="gerente">
-                            <i class="fa-solid fa-user-tie"></i>
-                            Gerente
-                        </option>
-                        <option value="empleado">
-                            <i class="fa-solid fa-user"></i>
-                            Empleado
-                        </option>
-                    </select>
-                </div>
-            </div>
-
             <div class="usuarios-grid" id="usuariosGrid"></div>
         </div>
-    `;
-
-    // Antes de agregar el modal, elimina el anterior si existe
-    if (document.getElementById('userModal')) {
-        document.getElementById('userModal').remove();
-    }
-    const modalHTML = `
+        
+        <!-- Modal para agregar/editar usuario -->
         <div id="userModal" class="modal">
             <div class="modal-content">
                 <span class="close-modal" onclick="closeUserModal()">&times;</span>
                 <h2 id="userModalTitle">Nuevo Usuario</h2>
                 <form id="userForm" onsubmit="handleUserSubmit(event)">
-                    <input type="hidden" id="userId">
+                    <input type="hidden" id="userId" name="userId" value="">
+                    
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="nombreusuario">Nombre completo:</label>
-                            <input type="text" id="nombreusuario" name="nombreusuario" required>
+                            <label for="nombre">Nombre completo:</label>
+                            <input type="text" id="nombre" name="nombre" required>
                         </div>
                         <div class="form-group">
                             <label for="username">Nombre de usuario:</label>
@@ -68,8 +36,8 @@ function loadUsuariosContent() {
                             <input type="email" id="email" name="email" required>
                         </div>
                         <div class="form-group">
-                            <label for="telefonousuario">Teléfono:</label>
-                            <input type="tel" id="telefonousuario" name="telefonousuario" pattern="[0-9+ -]*">
+                            <label for="telefono">Teléfono:</label>
+                            <input type="tel" id="telefono" name="telefono">
                         </div>
                     </div>
 
@@ -85,8 +53,7 @@ function loadUsuariosContent() {
                         <div class="form-group">
                             <label for="sucursal">Sucursal asignada:</label>
                             <select id="sucursal" name="sucursal" required>
-                            <option value="sucursal1">Sucursal 1</option>
-                            <option value="sucursal2">Sucursal 2</option>
+                                <option value="">Seleccionar sucursal</option>
                             </select>
                         </div>
                     </div>
@@ -94,17 +61,11 @@ function loadUsuariosContent() {
                     <div class="form-row password-section">
                         <div class="form-group">
                             <label for="password">Contraseña:</label>
-                            <div class="password-input">
-                                <input type="password" id="password" name="password" required>
-                                <i class="fa-solid fa-eye toggle-password"></i>
-                            </div>
+                            <input type="password" id="password" name="password">
                         </div>
                         <div class="form-group">
                             <label for="confirm_password">Confirmar contraseña:</label>
-                            <div class="password-input">
-                                <input type="password" id="confirm_password" name="confirm_password" required>
-                                <i class="fa-solid fa-eye toggle-password"></i>
-                            </div>
+                            <input type="password" id="confirm_password" name="confirm_password">
                         </div>
                     </div>
 
@@ -128,12 +89,15 @@ function loadUsuariosContent() {
             </div>
         </div>
     `;
-    document.body.insertAdjacentHTML('beforeend', modalHTML);
 
     loadUsuarios();
     initializeEventListeners();
+
+    // Aseguramos que las funciones críticas estén definidas
+    ensureFunctionsAvailable();
 }
 
+// Inicializar event listeners para elementos de la interfaz
 function initializeEventListeners() {
     // Inicializar los event listeners de los toggles de contraseña
     const togglePasswordButtons = document.querySelectorAll('.toggle-password');
@@ -148,203 +112,243 @@ function initializeEventListeners() {
     });
 }
 
+// Asegurar que las funciones críticas estén disponibles
+function ensureFunctionsAvailable() {
+    // Implementaciones de respaldo para funciones críticas
+    if (typeof window.closeUserModal !== 'function') {
+        console.warn('La función closeUserModal no está disponible. Usando implementación de respaldo.');
+        window.closeUserModal = function() {
+            const modal = document.getElementById('userModal');
+            if (modal) {
+                modal.style.display = 'none';
+            }
+        };
+    }
+
+    if (typeof window.showAddUserModal !== 'function') {
+        console.warn('La función showAddUserModal no está disponible. Usando implementación de respaldo.');
+        window.showAddUserModal = function() {
+            const modal = document.getElementById('userModal');
+            if (modal) {
+                modal.style.display = 'flex';
+            }
+        };
+    }
+
+    // Inicializar window.userPermissions si no existe
+    if (!window.userPermissions) {
+        console.warn('window.userPermissions no está definido. Inicializándolo con valores predeterminados.');
+        window.userPermissions = {
+            admin: false,
+            gerente: false,
+            superuser: false
+        };
+    }
+
+    // Asegurar que existe el campo de ID de usuario
+    if (!document.getElementById('userId')) {
+        console.warn('Campo userId no encontrado, creando uno temporal.');
+        const hiddenField = document.createElement('input');
+        hiddenField.type = 'hidden';
+        hiddenField.id = 'userId';
+        hiddenField.name = 'userId';
+        document.getElementById('userForm')?.appendChild(hiddenField);
+    }
+}
+
+// Carga la lista de usuarios desde la API
 async function loadUsuarios() {
+    console.log("🔍 Iniciando carga de usuarios...");
+    console.log("🔑 Permisos actuales:", window.userPermissions);
+    
+    // Asegurarse que canEditUser está disponible
+    const checkEditPermission = function(targetRole) {
+        // Si la función canEditUser está disponible, usarla
+        if (typeof window.canEditUser === 'function') {
+            console.log(`✓ Usando función canEditUser para ${targetRole}`);
+            return window.canEditUser(targetRole);
+        } 
+        
+        // Implementación local de respaldo
+        console.log(`⚠️ Usando implementación local para permisos de ${targetRole}`);
+        
+        // Normalizar el rol para comparaciones consistentes
+        const normalizedRole = targetRole.toLowerCase();
+        
+        // Superusuario puede editar a cualquiera
+        if (window.userPermissions && window.userPermissions.superuser === true) {
+            return true;
+        }
+        
+        // Administrador puede editar a gerentes y empleados, pero no a otros administradores
+        if (window.userPermissions && window.userPermissions.admin === true) {
+            return normalizedRole !== 'administrador' && normalizedRole !== 'admin';
+        }
+        
+        // Gerente puede editar sólo a empleados
+        if (window.userPermissions && window.userPermissions.gerente === true) {
+            return normalizedRole === 'empleado';
+        }
+        
+        // Empleados no pueden editar a nadie
+        return false;
+    };
+    
     try {
         const response = await fetch('/usuarios/');
         const data = await response.json();
+        console.log("📊 Datos recibidos de la API:", data);
         
         if (data.status === 'success') {
             const grid = document.getElementById('usuariosGrid');
-            grid.innerHTML = data.usuarios.map(usuario => `
-                <div class="user-card">
+            if (!grid) {
+                console.error("❌ Error: No se encontró el elemento usuariosGrid");
+                return;
+            }
+            
+            if (!data.usuarios || data.usuarios.length === 0) {
+                console.log("ℹ️ No hay usuarios para mostrar");
+                grid.innerHTML = '<div class="no-data">No hay usuarios para mostrar</div>';
+                return;
+            }
+            
+            grid.innerHTML = data.usuarios.map(usuario => {
+                console.log(`👤 Procesando usuario: ${usuario.nombre}, Rol: ${usuario.rol}`);
+                
+                // Determinar si se puede editar este usuario usando la función local
+                const canEdit = checkEditPermission(usuario.rol);
+                console.log(`👉 ¿Puede editar a ${usuario.nombre}? ${canEdit ? 'SÍ' : 'NO'}`);
+                
+                return `
+                <div class="user-card ${!usuario.activo ? 'inactive-user' : ''}">
                     <div class="user-header">
                         <div class="user-avatar">
                             <i class="fa-solid fa-user"></i>
                         </div>
                         <div class="user-info">
                             <h3>${usuario.nombre}</h3>
-                            <span class="user-role role-${usuario.rol}">${usuario.rol}</span>
+                            <span class="user-role role-${usuario.rol.toLowerCase()}">${usuario.rol}</span>
+                            ${!usuario.activo ? '<span class="user-inactive">Inactivo</span>' : ''}
                         </div>
                     </div>
                     <div class="user-details">
                         <p><i class="fa-solid fa-at"></i> ${usuario.email}</p>
-                        <p><i class="fa-solid fa-building"></i> ${usuario.sucursal}</p>
+                        <p><i class="fa-solid fa-building"></i> ${usuario.sucursal || 'No asignada'}</p>
                         <p><i class="fa-solid fa-phone"></i> ${usuario.telefono || 'No registrado'}</p>
                     </div>
                     <div class="user-actions">
-                        <button class="btn-edit" onclick="editUser(${usuario.id})" title="Editar usuario">
-                            <i class="fa-solid fa-pen"></i>
-                        </button>
-                        <button class="btn-delete" onclick="deleteUser(${usuario.id})" title="Eliminar usuario">
-                            <i class="fa-solid fa-trash"></i>
-                        </button>
+                        ${canEdit ? `
+                            <button class="btn-edit" onclick="editUser(${usuario.id})" title="Editar usuario">
+                                <i class="fa-solid fa-pen"></i>
+                            </button>
+                            <button class="btn-delete" onclick="deleteUser(${usuario.id})" title="Eliminar usuario">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        ` : `
+                            <button class="btn-disabled" title="No tienes permiso para editar este usuario">
+                                <i class="fa-solid fa-lock"></i>
+                            </button>
+                        `}
                     </div>
                 </div>
-            `).join('');
+                `;
+            }).join('');
+            
+            console.log("✅ Usuarios cargados exitosamente");
+        } else {
+            console.error("❌ Error en la respuesta:", data.message || "Desconocido");
+            document.getElementById('usuariosGrid').innerHTML = 
+                '<div class="error-message">Error al cargar usuarios</div>';
         }
     } catch (error) {
-        console.error('Error:', error);
+        console.error("❌ Error al cargar usuarios:", error);
+        document.getElementById('usuariosGrid').innerHTML = 
+            '<div class="error-message">Error al conectar con el servidor</div>';
     }
 }
 
-async function editUser(userId) {
-    try {
-        const response = await fetch(`/usuarios/${userId}/`);
-        const data = await response.json();
-        
-        if (data.status === 'success') {
-            const user = data.usuario;
-            console.log('Datos del usuario recibidos:', user); // Debug
-            
-            // Limpiar campos de contraseña
-            document.getElementById('password').value = '';
-            document.getElementById('confirm_password').value = '';
-            document.getElementById('password').required = false;
-            document.getElementById('confirm_password').required = false;
-            
-            // Rellenar el formulario con los datos del usuario
-            document.getElementById('nombreusuario').value = user.nombre || '';
-            document.getElementById('username').value = user.username || '';
-            document.getElementById('email').value = user.email || '';
-            document.getElementById('telefonousuario').value = user.telefono || '';
-            document.getElementById('rol').value = user.rol || 'empleado';
-            document.getElementById('sucursal').value = user.sucursal || '';
-            document.getElementById('activo').checked = user.activo;
-            document.getElementById('userId').value = user.id;
-            
-            // Ocultar campos de contraseña en edición
-            const passwordSection = document.querySelector('.password-section');
-            if (passwordSection) {
-                const passwordInputs = passwordSection.querySelectorAll('input');
-                passwordInputs.forEach(input => {
-                    input.required = false;
-                    input.value = '';
-                });
-            }
-            
-            // Cambiar título del modal
-            document.getElementById('userModalTitle').textContent = 'Editar Usuario';
-            
-            // Mostrar el modal
-            const modal = document.getElementById('userModal');
-            if (modal) {
-                modal.style.display = 'flex';
-            }
-        }
-    } catch (error) {
-        console.error('Error al cargar usuario:', error);
-        showNotification('Error al cargar datos del usuario', 'error');
+// Función para editar un usuario si usuarios_form.js no está disponible
+function editUser(userId) {
+    console.log(`Intentando editar usuario con ID: ${userId}`);
+    
+    // Verificar si la función está disponible en el ámbito global (usuarios_form.js)
+    if (typeof window.editUser === 'function' && window.editUser !== editUser) {
+        // Llamar a la implementación externa
+        window.editUser(userId);
+    } else {
+        // Implementación de respaldo
+        fetch(`/usuarios/${userId}/`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    const user = data.usuario;
+                    // Aquí implementaría la funcionalidad de edición
+                    // Por ahora, solo mostramos los datos y un mensaje
+                    console.log("Datos del usuario:", user);
+                    showNotification('Función de edición completa en usuarios_form.js', 'info');
+                } else {
+                    showNotification(data.message || 'Error al cargar el usuario', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showNotification('Error al conectar con el servidor', 'error');
+            });
     }
 }
 
-async function deleteUser(userId) {
+// Función para eliminar un usuario
+function deleteUser(userId) {
     if (!confirm('¿Está seguro de que desea eliminar este usuario?')) {
         return;
     }
     
-    try {
-        const response = await fetch(`/usuarios/${userId}/`, {
-            method: 'DELETE',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken')
-            }
-        });
-        
-        const data = await response.json();
-        
+    fetch(`/usuarios/${userId}/`, {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
         if (data.status === 'success') {
             showNotification(data.message, 'success');
-            await loadUsuarios();
+            loadUsuarios(); // Recargar la lista
         } else {
             throw new Error(data.message);
         }
-    } catch (error) {
+    })
+    .catch(error => {
         console.error('Error:', error);
         showNotification('Error al eliminar usuario', 'error');
-    }
+    });
 }
 
-// Modificar showAddUserModal para no limpiar los campos en edición
-function showAddUserModal() {
-    const modal = document.getElementById('userModal');
-    const form = document.getElementById('userForm');
-    const userId = document.getElementById('userId').value;
+// Mostrar notificaciones
+function showNotification(message, type = 'success') {
+    console.log('Mostrando notificación:', message, type);
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.innerHTML = `
+        <i class="fa-solid ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i>
+        <span>${message}</span>
+    `;
     
-    if (modal && form) {
-        if (!userId) {
-            // Nuevo usuario: limpiar todo
-            document.getElementById('userModalTitle').textContent = 'Nuevo Usuario';
-            form.reset();
-            document.getElementById('userId').value = '';
-            
-            // Hacer campos de contraseña requeridos
-            const passwordInputs = document.querySelectorAll('.password-section input');
-            passwordInputs.forEach(input => input.required = true);
-        }
-        // En edición: mantener los datos
-        
-        modal.style.display = 'flex';
-    }
-}
-
-// Función para cerrar el modal
-function closeUserModal() {
-    const modal = document.getElementById('userModal');
-    if (modal) {
-        modal.style.display = 'none';
-    }
-}
-
-// Modificar handleUserSubmit para manejar tanto creación como edición
-async function handleUserSubmit(event) {
-    event.preventDefault();
+    document.body.appendChild(notification);
     
-    try {
-        const form = document.getElementById('userForm');
-        const userId = document.getElementById('userId').value;
-        
-        const formData = {
-            nombre: document.getElementById('nombreusuario').value.trim(),
-            username: document.getElementById('username').value.trim(),
-            email: document.getElementById('email').value.trim(),
-            telefono: document.getElementById('telefonousuario').value.trim(),
-            password: document.getElementById('password').value,
-            rol: document.getElementById('rol').value,
-            sucursal: document.getElementById('sucursal').value,
-            activo: document.getElementById('activo').checked
-        };
+    setTimeout(() => {
+        notification.remove();
+    }, 3000);
+}
 
-        // Si no hay contraseña en edición, eliminarla del objeto
-        if (!formData.password && userId) {
-            delete formData.password;
-        }
+// Funciones para verificación de permisos
+function isAdmin() {
+    return window.userPermissions && window.userPermissions.admin === true;
+}
 
-        const url = userId ? `/usuarios/${userId}/` : '/usuarios/';
-        const method = userId ? 'PUT' : 'POST';
-
-        const response = await fetch(url, {
-            method: method,
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken')
-            },
-            body: JSON.stringify(formData)
-        });
-
-        const data = await response.json();
-        
-        if (data.status === 'success') {
-            showNotification(data.message, 'success');
-            closeUserModal();
-            await loadUsuarios();
-        } else {
-            throw new Error(data.message);
-        }
-    } catch (error) {
-        console.error('Error:', error);
-        showNotification(error.message, 'error');
-    }
+function isGerente() {
+    return window.userPermissions && (window.userPermissions.gerente === true || isAdmin());
 }
 
 // Función para obtener el CSRF token
@@ -363,99 +367,85 @@ function getCookie(name) {
     return cookieValue;
 }
 
-function validateUserForm() {
-    const fields = {
-        nombreusuario: 'El nombre es requerido',
-        username: 'El nombre de usuario es requerido',
-        email: 'El correo electrónico es requerido',
-        password: 'La contraseña es requerida',
-        confirm_password: 'Debe confirmar la contraseña'
-    };
+// Exportar funciones al ámbito global para que sean accesibles desde HTML
+window.loadUsuariosContent = loadUsuariosContent;
+window.loadUsuarios = loadUsuarios;
+window.editUser = editUser;
+window.deleteUser = deleteUser;
+window.closeUserModal = closeUserModal;
+window.showAddUserModal = showAddUserModal;
 
-    // Validar campos requeridos
-    for (const [fieldId, message] of Object.entries(fields)) {
-        const field = document.getElementById(fieldId);
-        const value = field.value.trim();
+function renderUsuarios(usuarios) {
+    const grid = document.getElementById('usuariosGrid');
+    
+    if (!usuarios || usuarios.length === 0) {
+        grid.innerHTML = '<p class="no-data">No hay usuarios para mostrar</p>';
+        return;
+    }
+    
+    grid.innerHTML = usuarios.map(usuario => {
+        // Determinar clase CSS del rol para la tarjeta
+        let roleClass = 'role-empleado'; // Por defecto
+        const roleLower = usuario.rol.toLowerCase();
         
-        if (!value) {
-            showNotification(message, 'error');
-            field.focus();
-            return false;
+        if (roleLower === 'administrador' || roleLower === 'admin') {
+            roleClass = 'role-administrador'; // Usar 'administrador' completo
+        } else if (roleLower === 'gerente') {
+            roleClass = 'role-gerente';
+        } else if (roleLower === 'empleado') {
+            roleClass = 'role-empleado';
         }
-    }
-
-    // Validar email
-    const email = document.getElementById('email').value.trim();
-    if (!email.includes('@')) {
-        showNotification('El correo electrónico no es válido', 'error');
-        document.getElementById('email').focus();
-        return false;
-    }
-
-    // Validar contraseñas
-    const password = document.getElementById('password').value;
-    const confirmPassword = document.getElementById('confirm_password').value;
-
-    if (password.length < 8) {
-        showNotification('La contraseña debe tener al menos 8 caracteres', 'error');
-        document.getElementById('password').focus();
-        return false;
-    }
-
-    if (password !== confirmPassword) {
-        showNotification('Las contraseñas no coinciden', 'error');
-        document.getElementById('confirm_password').focus();
-        return false;
-    }
-
-    return true;
+        
+        const isInactive = !usuario.activo;
+        const cardClass = isInactive ? 'user-card inactive-user' : 'user-card';
+        
+        // Determinar si el usuario puede ser editado
+        const canEditThisUser = typeof window.canEditUser === 'function' 
+            ? window.canEditUser(usuario.rol)
+            : (window.userPermissions && 
+              ((window.userPermissions.admin && usuario.rol !== 'Administrador') || 
+               window.userPermissions.superuser || 
+               (window.userPermissions.gerente && usuario.rol === 'Empleado')));
+        
+        return `
+            <div class="${cardClass}">
+                <div class="user-header">
+                    <div class="user-avatar">
+                        <i class="fa-solid fa-user"></i>
+                    </div>
+                    <div class="user-info">
+                        <h3>${usuario.nombre}</h3>
+                        <span class="user-role ${roleClass}">${usuario.rol}</span>
+                        ${isInactive ? '<span class="user-inactive">Inactivo</span>' : ''}
+                    </div>
+                </div>
+                
+                <div class="user-details">
+                    <p><i class="fa-solid fa-at"></i> ${usuario.username}</p>
+                    <p><i class="fa-solid fa-envelope"></i> ${usuario.email}</p>
+                    ${usuario.telefono ? `<p><i class="fa-solid fa-phone"></i> ${usuario.telefono}</p>` : ''}
+                    <p><i class="fa-solid fa-building"></i> ${usuario.sucursal || 'Sin asignar'}</p>
+                </div>
+                
+                <div class="user-actions">
+                    ${canEditThisUser ? 
+                        `<button class="btn-secondary" onclick="editUser(${usuario.id})">
+                            <i class="fa-solid fa-edit"></i> Editar
+                        </button>` :
+                        `<button class="btn-disabled" disabled title="No tienes permisos para editar este usuario">
+                            <i class="fa-solid fa-edit"></i> Editar
+                        </button>`
+                    }
+                    ${canEditThisUser ?
+                        `<button class="btn-danger" onclick="deleteUser(${usuario.id})">
+                            <i class="fa-solid fa-trash"></i> Eliminar
+                        </button>` :
+                        `<button class="btn-disabled" disabled title="No tienes permisos para eliminar este usuario">
+                            <i class="fa-solid fa-trash"></i> Eliminar
+                        </button>`
+                    }
+                </div>
+            </div>
+        `;
+    }).join('');
 }
-
-// Agregar console.log para debugging
-function showNotification(message, type = 'success') {
-    console.log('Mostrando notificación:', message, type); // Para debugging
-    const notification = document.createElement('div');
-    notification.className = `notification ${type}`;
-    notification.innerHTML = `
-        <i class="fa-solid ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i>
-        <span>${message}</span>
-    `;
-    
-    document.body.appendChild(notification);
-    
-    setTimeout(() => {
-        notification.remove();
-    }, 3000);
-}
-
-// Event Listeners
-document.addEventListener('DOMContentLoaded', function() {
-    // Búsqueda en tiempo real
-    const searchInput = document.getElementById('searchUs');
-    if (searchInput) {
-        searchInput.addEventListener('input', function() {
-            // Implementar búsqueda
-        });
-    }
-
-    // Filtro por rol
-    const filterRole = document.getElementById('filterRole');
-    if (filterRole) {
-        filterRole.addEventListener('change', function() {
-            // Implementar filtrado
-        });
-    }
-
-    // Agregar event listener para el formulario
-    const userForm = document.getElementById('userForm');
-    if (userForm) {
-        userForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            console.log('Valores del formulario en submit:');
-            console.log('nombre:', document.getElementById('nombre').value);
-            console.log('username:', document.getElementById('username').value);
-            console.log('email:', document.getElementById('email').value);
-            handleUserSubmit(e);
-        });
-    }
-});

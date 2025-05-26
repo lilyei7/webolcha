@@ -352,6 +352,15 @@
         </div>    </div>
     <!-- Corrección de scripts - actualizar orden para cargar insumos.js antes de dashboard.js -->
        <!-- Actualiza esta sección en dashboard.html -->
+    <script id="user-permissions-data" type="application/json">
+    {
+        "admin": {{ permisos.admin|yesno:"true,false" }},
+        "gerente": {{ permisos.gerente|yesno:"true,false" }},
+        "superuser": {{ permisos.superuser|yesno:"true,false" }},
+        "sucursales": {{ permisos.sucursales|safe|default:"[]" }}
+    }
+    </script>
+    <script src="{% static 'accounts/js/permissions.js' %}"></script>
     <script src="{% static 'accounts/js/menu.js' %}"></script>
     <script src="{% static 'accounts/js/debug-menu.js' %}"></script>
     <script src="{% static 'accounts/js/proveedores.js' %}"></script>
@@ -361,6 +370,7 @@
     <script src="{% static 'accounts/js/entradas_salidas.js' %}"></script> <!-- AGREGAR ESTA LÍNEA -->
     <script src="{% static 'accounts/js/dashboard.js' %}"></script>
     <script src="{% static 'accounts/js/usuarios.js' %}"></script>
+    <script src="{% static 'accounts/js/usuarios_form.js' %}"></script> <!-- AGREGAR ESTA LÍNEA -->
     <script src="{% static 'accounts/js/notifications.js' %}"></script>
 
 </body>

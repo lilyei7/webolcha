@@ -61,7 +61,7 @@ async function loadEntradasSalidasContent() {
                             </select>
                         </div>
                         <div>
-                            <label style="display: block; margin-bottom: 4px; font-weight: 500; color: #374151; font-size: 0.9rem;">Sucursal</label>
+                            <label style="display: block; margin-bottom: 4px; font-weight: 500, color: #374151; font-size: 0.9rem;">Sucursal</label>
                             <select id="filterSucursalMovimiento" style="padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; width: 100%; font-size: 0.95rem;">
                                 <option value="">Todas las sucursales</option>
                             </select>
@@ -125,6 +125,39 @@ async function loadEntradasSalidasContent() {
                             <option value="">Seleccionar sucursal</option>
                         </select>
                     </div>
+                    
+                    <!-- Motivo (MOVED HERE, now after Sucursal) -->
+                    <div style="margin-bottom: 20px;">
+                        <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #374151;">Motivo *</label>
+                        <select id="motivoMovimiento" required onchange="toggleCamposSegunMotivo()" style="padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; width: 100%; font-size: 0.95rem;">
+                            <option value="">Seleccionar motivo</option>
+                            <option value="compra">Compra</option>
+                            <option value="devolucion">Devolución</option>
+                            <option value="ajuste_inventario">Ajuste de inventario</option>
+                            <option value="traspaso">Traspaso entre sucursales</option>
+                            <option value="caducidad">Caducidad</option>
+                            <option value="consumo_interno">Consumo interno</option>
+                            <option value="venta">Venta</option>
+                            <option value="merma">Merma</option>
+                            <option value="otro">Otro</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Proveedor (solo para entradas y devoluciones) -->
+                    <div id="proveedorContainer" style="margin-bottom: 20px; display: none;">
+                        <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #374151;">Proveedor</label>
+                        <select id="proveedorMovimiento" style="padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; width: 100%; font-size: 0.95rem;">
+                            <option value="">Seleccionar proveedor (opcional)</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Sucursal de destino (solo para traspasos) -->
+                    <div id="sucursalDestinoContainer" style="margin-bottom: 20px; display: none;">
+                        <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #374151;">Sucursal de Destino *</label>
+                        <select id="sucursalDestinoMovimiento" style="padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; width: 100%; font-size: 0.95rem;">
+                            <option value="">Seleccionar sucursal de destino</option>
+                        </select>
+                    </div>
 
                     <!-- Insumo -->
                     <div style="margin-bottom: 20px;">
@@ -148,37 +181,16 @@ async function loadEntradasSalidasContent() {
                         </div>
                     </div>
 
-                    <!-- Proveedor (solo para entradas) -->
-                    <div id="proveedorContainer" style="margin-bottom: 20px; display: none;">
-                        <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #374151;">Proveedor</label>
-                        <select id="proveedorMovimiento" style="padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; width: 100%; font-size: 0.95rem;">
-                            <option value="">Seleccionar proveedor (opcional)</option>
-                        </select>
-                    </div>
+                    
 
-                    <!-- Costo unitario (solo para entradas) -->
+                    <!-- Costo nuevo (solo para entradas) -->
                     <div id="costoContainer" style="margin-bottom: 20px; display: none;">
-                        <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #374151;">Costo Unitario *</label>
+                        <label style="display: block; margin-bottom: 8px; font-weight: 500, color: #374151;">Costo Nuevo *</label>
                         <input type="number" id="costoUnitario" step="0.01" min="0" 
                             style="padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; width: 100%; font-size: 0.95rem;">
                     </div>
 
-                    <!-- Motivo -->
-                    <div style="margin-bottom: 20px;">
-                        <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #374151;">Motivo *</label>
-                        <select id="motivoMovimiento" required onchange="toggleOtroMotivo()" style="padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; width: 100%; font-size: 0.95rem;">
-                            <option value="">Seleccionar motivo</option>
-                            <option value="compra">Compra</option>
-                            <option value="devolucion">Devolución</option>
-                            <option value="ajuste_inventario">Ajuste de inventario</option>
-                            <option value="traspaso">Traspaso entre sucursales</option>
-                            <option value="caducidad">Caducidad</option>
-                            <option value="consumo_interno">Consumo interno</option>
-                            <option value="venta">Venta</option>
-                            <option value="merma">Merma</option>
-                            <option value="otro">Otro</option>
-                        </select>
-                    </div>
+                    
 
                     <!-- Otro motivo -->
                     <div id="otroMotivoContainer" style="margin-bottom: 20px; display: none;">
@@ -255,30 +267,57 @@ function configurarEventListenersEntradasSalidas() {
     if (movimientoForm) {
         movimientoForm.addEventListener('submit', handleMovimientoSubmit);
     }
+
+    const proveedorSelect = document.getElementById('proveedorMovimiento');
+    if (proveedorSelect) {
+        proveedorSelect.addEventListener('change', function() {
+            cargarInsumosDeProveedor(this.value);
+        });
+    }
+    
+    const sucursalSelect = document.getElementById('sucursalMovimiento');
+    if (sucursalSelect) {
+        sucursalSelect.addEventListener('change', function() {
+            const motivo = document.getElementById('motivoMovimiento').value;
+            if (motivo === 'traspaso') {
+                cargarInsumosDeOrigen(this.value);
+                // Also populate destination sucursal dropdown, excluding the current selection
+                cargarSucursalesDestino(this.value);
+            }
+        });
+    }
+    
+    const motivoSelect = document.getElementById('motivoMovimiento');
+    if (motivoSelect) {
+        motivoSelect.addEventListener('change', toggleCamposSegunMotivo);
+    }
 }
 
 // Cargar sucursales
 async function cargarSucursalesEntradasSalidas() {
     try {
-        const response = await fetch('/api/sucursales/');
+        const response = await fetch('/sucursales/');
         const data = await response.json();
         
         if (data.status === 'success') {
+            // Real data from database
             entradasSalidasSucursalesCache = data.sucursales;
             
-            // Llenar select de sucursales en modal
+            // Populate dropdown with real data
             const sucursalSelect = document.getElementById('sucursalMovimiento');
             if (sucursalSelect) {
                 sucursalSelect.innerHTML = '<option value="">Seleccionar sucursal</option>' +
                     data.sucursales.map(s => `<option value="${s.id}">${s.nombre}</option>`).join('');
             }
 
-            // Llenar filtro de sucursales
+            // Populate filter with real data
             const filterSucursal = document.getElementById('filterSucursalMovimiento');
             if (filterSucursal) {
                 filterSucursal.innerHTML = '<option value="">Todas las sucursales</option>' +
                     data.sucursales.map(s => `<option value="${s.id}">${s.nombre}</option>`).join('');
             }
+        } else {
+            console.error('Error en respuesta:', data.message || 'Error desconocido');
         }
     } catch (error) {
         console.error('Error al cargar sucursales:', error);
@@ -299,8 +338,8 @@ async function cargarInsumosEntradasSalidas() {
                 insumoSelect.innerHTML = '<option value="">Seleccionar insumo</option>' +
                     data.insumos.map(i => `<option value="${i.id}" data-unidad="${i.unidad}">${i.nombre} (${i.categoria})</option>`).join('');
             }
-        }
-    } catch (error) {
+        }  // Este cierre de llave debe estar aquí
+    } catch (error) { // El catch debe estar a este nivel
         console.error('Error al cargar insumos:', error);
     }
 }
@@ -308,7 +347,7 @@ async function cargarInsumosEntradasSalidas() {
 // Cargar proveedores
 async function cargarProveedoresEntradasSalidas() {
     try {
-        const response = await fetch('/api/proveedores/');
+        const response = await fetch('/proveedores/');
         const data = await response.json();
         
         if (data.status === 'success') {
@@ -319,8 +358,8 @@ async function cargarProveedoresEntradasSalidas() {
                 proveedorSelect.innerHTML = '<option value="">Seleccionar proveedor (opcional)</option>' +
                     data.proveedores.map(p => `<option value="${p.id}">${p.nombre}</option>`).join('');
             }
-        }
-    } catch (error) {
+        }  // Este cierre de llave debe estar aquí
+    } catch (error) { // El catch debe estar a este nivel
         console.error('Error al cargar proveedores:', error);
     }
 }
@@ -332,7 +371,9 @@ async function cargarMovimientos() {
         const data = await response.json();
         
         if (data.status === 'success') {
+            // Store real database data in cache
             entradasSalidasMovimientosCache = data.movimientos;
+            // Render using real data
             renderizarMovimientos(data.movimientos);
         } else {
             throw new Error(data.message || 'Error al cargar movimientos');
@@ -403,19 +444,22 @@ function renderizarMovimientos(movimientos) {
                 ` : `
                     <div style="font-size: 0.9rem; color: #64748b;">${mov.motivo}</div>
                 `}
+                
+                ${mov.estado === 'cancelado' ? `
+                    <span style="background-color: #fee2e2; color: #b91c1c; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 500;">
+                        CANCELADO
+                    </span>
+                ` : ''}
             </div>
             
             <div style="margin-left: 16px;">
-                <button onclick="event.stopPropagation(); editarMovimiento(${mov.id})" 
-                        style="background: none; border: none; color: #3b82f6; cursor: pointer; padding: 8px; border-radius: 4px; margin-right: 4px;" 
-                        title="Editar">
-                    <i class="fa-solid fa-edit"></i>
-                </button>
-                <button onclick="event.stopPropagation(); eliminarMovimiento(${mov.id})" 
-                        style="background: none; border: none; color: #ef4444; cursor: pointer; padding: 8px; border-radius: 4px;" 
-                        title="Eliminar">
-                    <i class="fa-solid fa-trash"></i>
-                </button>
+                ${mov.estado !== 'cancelado' ? `
+                    <button onclick="event.stopPropagation(); cancelarMovimiento(${mov.id})" 
+                            style="background: none; border: none; color: #ef4444; cursor: pointer; padding: 8px; border-radius: 4px;" 
+                            title="Cancelar Movimiento">
+                        <i class="fa-solid fa-ban"></i>
+                    </button>
+                ` : ''}
             </div>
         </div>
     `).join('');
@@ -437,10 +481,22 @@ function mostrarModalMovimiento() {
     document.getElementById('movimientoForm').reset();
     document.getElementById('movimientoId').value = '';
     
-    // Ocultar campos específicos de entrada
+    // Default to 'entrada' type
+    document.querySelector('input[name="tipoMovimiento"][value="entrada"]').checked = true;
+    
+    // Clear the insumoMovimiento select
+    const insumoSelect = document.getElementById('insumoMovimiento');
+    insumoSelect.innerHTML = '<option value="">Seleccione datos adicionales primero</option>';
+    insumoSelect.disabled = true;
+    
+    // Initialize all containers to be hidden
     document.getElementById('proveedorContainer').style.display = 'none';
-    document.getElementById('costoContainer').style.display = 'none';
+    document.getElementById('sucursalDestinoContainer').style.display = 'none';
     document.getElementById('otroMotivoContainer').style.display = 'none';
+    document.getElementById('costoContainer').style.display = 'none';
+    
+    // Initialize field visibility based on the default type
+    toggleCamposSegunTipo();
 }
 
 // Cerrar modal
@@ -456,18 +512,80 @@ function cerrarDetalleMovimiento() {
 // Toggle campos según tipo de movimiento
 function toggleCamposSegunTipo() {
     const tipo = document.querySelector('input[name="tipoMovimiento"]:checked')?.value;
+    const motivo = document.getElementById('motivoMovimiento').value;
     const proveedorContainer = document.getElementById('proveedorContainer');
     const costoContainer = document.getElementById('costoContainer');
     
+    // Motivo-specific logic takes precedence for provider visibility
+    if (motivo !== 'devolucion') {
+        // Only show provider for devolucion or entrada
+        proveedorContainer.style.display = tipo === 'entrada' ? 'block' : 'none';
+    }
+    
     if (tipo === 'entrada') {
-        proveedorContainer.style.display = 'block';
         costoContainer.style.display = 'block';
         document.getElementById('costoUnitario').required = true;
     } else {
-        proveedorContainer.style.display = 'none';
         costoContainer.style.display = 'none';
         document.getElementById('costoUnitario').required = false;
     }
+}
+
+// Toggle campos según motivo del movimiento
+function toggleCamposSegunMotivo() {
+    const motivo = document.getElementById('motivoMovimiento').value;
+    const tipo = document.querySelector('input[name="tipoMovimiento"]:checked')?.value;
+    const proveedorContainer = document.getElementById('proveedorContainer');
+    const sucursalDestinoContainer = document.getElementById('sucursalDestinoContainer');
+    const otroMotivoContainer = document.getElementById('otroMotivoContainer');
+    const insumoSelect = document.getElementById('insumoMovimiento');
+    
+    // Reset display properties
+    proveedorContainer.style.display = 'none';
+    sucursalDestinoContainer.style.display = 'none';
+    otroMotivoContainer.style.display = 'none';
+    
+    // Clear and disable insumo select until appropriate condition is met
+    insumoSelect.innerHTML = '<option value="">Seleccione datos adicionales primero</option>';
+    insumoSelect.disabled = true;
+    
+    // Show fields based on motivo
+    if (motivo === 'devolucion') {
+        // Show provider field for returns
+        proveedorContainer.style.display = 'block';
+        
+        // Provider selection will enable the insumo field and load corresponding options
+    } 
+    else if (motivo === 'traspaso') {
+        // Show destination location field for transfers
+        sucursalDestinoContainer.style.display = 'block';
+        
+        // Load insumos from the origin location
+        const sucursalOrigenId = document.getElementById('sucursalMovimiento').value;
+        if (sucursalOrigenId) {
+            cargarInsumosDeOrigen(sucursalOrigenId);
+        } else {
+            // If no origin location is selected, keep insumo disabled
+            insumoSelect.innerHTML = '<option value="">Seleccione la sucursal de origen primero</option>';
+        }
+    }
+    else if (motivo === 'otro') {
+        // Show "other reason" field
+        otroMotivoContainer.style.display = 'block';
+        
+        // For other reasons, enable insumo selection with all insumos
+        cargarInsumosEntradasSalidas();
+        insumoSelect.disabled = false;
+    }
+    else {
+        // For all other motivos, load all insumos
+        cargarInsumosEntradasSalidas();
+        insumoSelect.disabled = false;
+    }
+    
+    // When motivo changes, we should also check tipo (entrada/salida) 
+    // to maintain consistent field visibility
+    toggleCamposSegunTipo();
 }
 
 // Toggle otro motivo
@@ -484,16 +602,23 @@ function toggleOtroMotivo() {
     }
 }
 
-// Actualizar unidad del insumo
+// Actualizar unidad del insumo y costo unitario
 function actualizarUnidadInsumo() {
     const insumoSelect = document.getElementById('insumoMovimiento');
     const unidadInput = document.getElementById('unidadMovimiento');
+    const costoInput = document.getElementById('costoUnitario');
     const selectedOption = insumoSelect.selectedOptions[0];
     
     if (selectedOption) {
         unidadInput.value = selectedOption.dataset.unidad || '';
+        
+        // Auto-fill cost from provider data if available
+        if (selectedOption.dataset.costo && costoInput) {
+            costoInput.value = selectedOption.dataset.costo;
+        }
     } else {
         unidadInput.value = '';
+        if (costoInput) costoInput.value = '';
     }
 }
 
@@ -516,14 +641,6 @@ async function handleMovimientoSubmit(event) {
             throw new Error('Debes seleccionar el tipo de movimiento');
         }
         
-        if (!insumoId) {
-            throw new Error('Debes seleccionar un insumo');
-        }
-        
-        if (!cantidad || cantidad <= 0) {
-            throw new Error('Debes ingresar una cantidad válida');
-        }
-        
         if (!sucursalId) {
             throw new Error('Debes seleccionar una sucursal');
         }
@@ -532,11 +649,27 @@ async function handleMovimientoSubmit(event) {
             throw new Error('Debes seleccionar un motivo para el movimiento');
         }
         
+        if (!insumoId) {
+            throw new Error('Debes seleccionar un insumo');
+        }
+        
+        if (!cantidad || cantidad <= 0) {
+            throw new Error('Debes ingresar una cantidad válida');
+        }
+        
+        // Validaciones adicionales según el motivo
+        if (motivo === 'traspaso') {
+            const sucursalDestinoId = document.getElementById('sucursalDestinoMovimiento').value;
+            if (!sucursalDestinoId) {
+                throw new Error('Debes seleccionar una sucursal de destino para el traspaso');
+            }
+        }
+        
         // Validaciones adicionales según el tipo
         if (tipo === 'entrada') {
             const costoUnitario = parseFloat(document.getElementById('costoUnitario').value);
             if (!costoUnitario || costoUnitario < 0) {
-                throw new Error('Debes ingresar un costo unitario válido');
+                throw new Error('Debes ingresar un costo nuevo válido');
             }
         }
         
@@ -565,6 +698,19 @@ async function handleMovimientoSubmit(event) {
                 formData.proveedor_id = parseInt(proveedorId);
             }
             formData.costo_unitario = parseFloat(document.getElementById('costoUnitario').value);
+        }
+        
+        // Campos específicos para traspasos
+        if (motivo === 'traspaso') {
+            formData.sucursal_destino_id = parseInt(document.getElementById('sucursalDestinoMovimiento').value);
+        }
+        
+        // Campos específicos para devoluciones
+        if (motivo === 'devolucion') {
+            const proveedorId = document.getElementById('proveedorMovimiento').value;
+            if (proveedorId) {
+                formData.proveedor_id = parseInt(proveedorId);
+            }
         }
         
         const url = isEditing ? `/api/movimientos/${movimientoId}/` : '/api/movimientos/';
@@ -606,7 +752,9 @@ async function verMovimiento(movimientoId) {
             
             const detalleHTML = `
                 <div style="border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
-                    <div style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0; background-color: ${movimiento.tipo === 'entrada' ? '#ecfdf5' : '#fef2f2'}; display: flex; align-items: center; justify-content: space-between;">
+                    <div style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0; 
+                                background-color: ${movimiento.tipo === 'entrada' ? '#ecfdf5' : '#fef2f2'}; 
+                                display: flex; align-items: center; justify-content: space-between;">
                         <div>
                             <span style="font-weight: 600; color: ${movimiento.tipo === 'entrada' ? '#047857' : '#b91c1c'}; text-transform: uppercase;">
                                 ${movimiento.tipo}
@@ -614,10 +762,13 @@ async function verMovimiento(movimientoId) {
                             <span style="margin-left: 8px; font-size: 0.9rem; color: ${movimiento.tipo === 'entrada' ? '#065f46' : '#991b1b'};">
                                 ${formatearFechaHora(movimiento.fecha_hora)}
                             </span>
+                            
+                            ${movimiento.estado === 'cancelado' ? `
+                                <span style="margin-left: 8px; background-color: #fee2e2; color: #b91c1c; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 500;">
+                                    CANCELADO
+                                </span>
+                            ` : ''}
                         </div>
-                        <span style="background-color: ${movimiento.tipo === 'entrada' ? '#d1fae5' : '#fee2e2'}; padding: 4px 10px; border-radius: 20px; font-size: 0.85rem; font-weight: 500;">
-                            ID: ${movimiento.id}
-                        </span>
                     </div>
                     
                     <div style="padding: 16px; background-color: white;">
@@ -633,32 +784,47 @@ async function verMovimiento(movimientoId) {
                         </div>
                         
                         <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 16px;">
+                            <!-- Sucursal (top-left) -->
                             <div>
                                 <div style="margin-bottom: 4px; font-size: 0.85rem; color: #64748b;">Sucursal</div>
                                 <div style="font-weight: 500; color: #1e293b;">${movimiento.sucursal_nombre}</div>
                             </div>
                             
+                            <!-- Sucursal de Destino (top-right, if applicable) -->
+                            ${movimiento.motivo === 'traspaso' && movimiento.sucursal_destino_nombre ? `
+                            <div>
+                                <div style="margin-bottom: 4px; font-size: 0.85rem; color: #64748b;">Sucursal de Destino</div>
+                                <div style="font-weight: 500; color: #1e293b;">${movimiento.sucursal_destino_nombre}</div>
+                            </div>
+                            ` : `
+                            <!-- Placeholder when there's no destination -->
+                            <div></div>
+                            `}
+                            
+                            <!-- Motivo (bottom-right) -->
+                            <div>
+                                <div style="margin-bottom: 4px; font-size: 0.85rem; color: #64748b;">Motivo</div>
+                                <div style="font-weight: 500; color: #1e293b;">${movimiento.motivo}</div>
+                            </div>
+                            
+                            <!-- Usuario (bottom-left) -->
                             <div>
                                 <div style="margin-bottom: 4px; font-size: 0.85rem; color: #64748b;">Usuario</div>
                                 <div style="font-weight: 500; color: #1e293b;">${movimiento.usuario_nombre}</div>
                             </div>
-                            
+
                             ${movimiento.tipo === 'entrada' ? `
+                            <!-- Additional entry-specific fields in a second row -->
                             <div>
                                 <div style="margin-bottom: 4px; font-size: 0.85rem; color: #64748b;">Proveedor</div>
                                 <div style="font-weight: 500; color: #1e293b;">${movimiento.proveedor_nombre || 'No especificado'}</div>
                             </div>
                             
                             <div>
-                                <div style="margin-bottom: 4px; font-size: 0.85rem; color: #64748b;">Costo Unitario</div>
+                                <div style="margin-bottom: 4px; font-size: 0.85rem; color: #64748b;">Costo Nuevo</div>
                                 <div style="font-weight: 500; color: #1e293b;">$${(movimiento.costo_unitario || 0).toFixed(2)}</div>
                             </div>
                             ` : ''}
-                            
-                            <div>
-                                <div style="margin-bottom: 4px; font-size: 0.85rem; color: #64748b;">Motivo</div>
-                                <div style="font-weight: 500; color: #1e293b;">${movimiento.motivo}</div>
-                            </div>
                         </div>
                         
                         ${movimiento.observaciones ? `
@@ -693,18 +859,35 @@ async function editarMovimiento(movimientoId) {
             document.getElementById('movimientoId').value = movimiento.id;
             document.querySelector(`input[name="tipoMovimiento"][value="${movimiento.tipo}"]`).checked = true;
             document.getElementById('sucursalMovimiento').value = movimiento.sucursal_id;
-            document.getElementById('insumoMovimiento').value = movimiento.insumo_id;
+            
+            // Primero establecer el proveedor
+            const proveedorSelect = document.getElementById('proveedorMovimiento');
+            proveedorSelect.value = movimiento.proveedor_id || '';
+            
+            // Cargar los insumos del proveedor y luego seleccionar el insumo
+            if (movimiento.proveedor_id) {
+                await cargarInsumosDeProveedor(movimiento.proveedor_id);
+                // Después de cargar los insumos, establecer el insumo seleccionado
+                document.getElementById('insumoMovimiento').value = movimiento.insumo_id;
+            } else {
+                // Si no hay proveedor, desactivar el selector de insumos
+                const insumoSelect = document.getElementById('insumoMovimiento');
+                insumoSelect.disabled = true;
+                insumoSelect.innerHTML = '<option value="">Seleccione un proveedor primero</option>';
+            }
+            
             document.getElementById('cantidadMovimiento').value = movimiento.cantidad;
             document.getElementById('unidadMovimiento').value = movimiento.unidad;
             document.getElementById('motivoMovimiento').value = movimiento.motivo;
             document.getElementById('observacionesMovimiento').value = movimiento.observaciones || '';
             
             if (movimiento.tipo === 'entrada') {
-                document.getElementById('proveedorMovimiento').value = movimiento.proveedor_id || '';
                 document.getElementById('costoUnitario').value = movimiento.costo_unitario || '';
             }
             
             toggleCamposSegunTipo();
+            toggleCamposSegunMotivo();
+            toggleOtroMotivo();
             
             document.getElementById('movimientoModalTitle').textContent = 'Editar Movimiento';
             document.getElementById('movimientoModal').style.display = 'flex';
@@ -740,6 +923,155 @@ async function eliminarMovimiento(movimientoId) {
     } catch (error) {
         console.error('Error:', error);
         alert(`Error: ${error.message}`);
+    }
+}
+
+// Función para cancelar un movimiento
+async function cancelarMovimiento(id) {
+    event.stopPropagation(); // Evitar que se propague al onClick del contenedor
+    
+    if (!confirm('¿Está seguro de que desea cancelar este movimiento? Esta acción no se puede deshacer.')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/movimientos/${id}/cancelar/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+            alert('Movimiento cancelado correctamente');
+            await cargarMovimientos(); // Recargar la lista
+        } else {
+            throw new Error(data.message || 'Error al cancelar el movimiento');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert(`Error: ${error.message}`);
+    }
+}
+
+// Cargar insumos de un proveedor específico
+async function cargarInsumosDeProveedor(proveedorId) {
+    const insumoSelect = document.getElementById('insumoMovimiento');
+    
+    try {
+        // If no provider is selected, disable ingredient selector
+        if (!proveedorId) {
+            insumoSelect.disabled = true;
+            insumoSelect.innerHTML = '<option value="">Seleccione un proveedor primero</option>';
+            return;
+        }
+        
+        // Show loading state
+        insumoSelect.disabled = true;
+        insumoSelect.innerHTML = '<option value="">Cargando insumos...</option>';
+        
+        const response = await fetch(`/api/proveedores/${proveedorId}/productos/`);
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+            // Enable the select and populate with provider's ingredients
+            insumoSelect.innerHTML = '<option value="">Seleccionar insumo</option>';
+            
+            // Add products from this provider
+            data.productos.forEach(producto => {
+                insumoSelect.innerHTML += `<option value="${producto.insumo_id}" 
+                    data-unidad="${producto.unidad}" 
+                    data-costo="${producto.costo_unitario}">
+                    ${producto.nombre} (${producto.categoria || 'Sin categoría'})
+                </option>`;
+            });
+            
+            // Enable the select now that we have options
+            insumoSelect.disabled = false;
+        }
+    } catch (error) {
+        console.error('Error al cargar insumos del proveedor:', error);
+        // Show error state
+        insumoSelect.innerHTML = '<option value="">Error al cargar insumos</option>';
+    }
+}
+
+// Add this function to load insumos based on the origin location for transfers
+
+// Cargar insumos de una sucursal de origen
+async function cargarInsumosDeOrigen(sucursalId) {
+    const insumoSelect = document.getElementById('insumoMovimiento');
+    
+    if (!sucursalId) {
+        insumoSelect.innerHTML = '<option value="">Seleccione la sucursal de origen primero</option>';
+        insumoSelect.disabled = true;
+        return;
+    }
+    
+    try {
+        insumoSelect.disabled = true;
+        insumoSelect.innerHTML = '<option value="">Cargando insumos...</option>';
+        
+        // API endpoint to get insumos available at a specific location
+        const response = await fetch(`/api/sucursales/${sucursalId}/insumos/`);
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+            insumoSelect.innerHTML = '<option value="">Seleccionar insumo</option>';
+            
+            // Add insumos from this location
+            data.insumos.forEach(insumo => {
+                insumoSelect.innerHTML += `<option value="${insumo.id}" 
+                    data-unidad="${insumo.unidad}" 
+                    data-stock="${insumo.stock}">
+                    ${insumo.nombre} (Stock: ${insumo.stock} ${insumo.unidad})
+                </option>`;
+            });
+            
+            insumoSelect.disabled = false;
+        } else {
+            throw new Error(data.message || 'Error al cargar insumos de la sucursal');
+        }
+    } catch (error) {
+        console.error('Error al cargar insumos de la sucursal:', error);
+        insumoSelect.innerHTML = '<option value="">Error al cargar insumos</option>';
+        insumoSelect.disabled = true;
+    }
+}
+
+// Add this function to load destination locations, excluding the origin
+
+// Cargar sucursales de destino para traspasos
+async function cargarSucursalesDestino(origenId) {
+    const destinoSelect = document.getElementById('sucursalDestinoMovimiento');
+    
+    try {
+        destinoSelect.disabled = true;
+        destinoSelect.innerHTML = '<option value="">Cargando sucursales...</option>';
+        
+        const response = await fetch('/sucursales/');
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+            destinoSelect.innerHTML = '<option value="">Seleccionar sucursal de destino</option>';
+            
+            // Filter out the origin location
+            const sucursalesDestino = data.sucursales.filter(s => s.id != origenId);
+            
+            sucursalesDestino.forEach(s => {
+                destinoSelect.innerHTML += `<option value="${s.id}">${s.nombre}</option>`;
+            });
+            
+            destinoSelect.disabled = false;
+        } else {
+            throw new Error(data.message || 'Error al cargar sucursales de destino');
+        }
+    } catch (error) {
+        console.error('Error al cargar sucursales de destino:', error);
+        destinoSelect.innerHTML = '<option value="">Error al cargar sucursales</option>';
     }
 }
 
