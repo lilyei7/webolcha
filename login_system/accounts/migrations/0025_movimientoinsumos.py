@@ -32,7 +32,7 @@ class Migration(migrations.Migration):
                 ('usuario', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
             ],
             options={
-                'constraints': [models.CheckConstraint(condition=models.Q(models.Q(('insumo_compuesto__isnull', False), ('insumo_elaborado__isnull', True), ('tipo_insumo', 'compuesto')), models.Q(('insumo_compuesto__isnull', True), ('insumo_elaborado__isnull', False), ('tipo_insumo', 'elaborado')), _connector='OR'), name='movimiento_solo_un_tipo_insumo')],
+                'constraints': [models.CheckConstraint(check=models.Q(models.Q(('insumo_compuesto__isnull', False), ('insumo_elaborado__isnull', True), ('tipo_insumo', 'compuesto')), models.Q(('insumo_compuesto__isnull', True), ('insumo_elaborado__isnull', False), ('tipo_insumo', 'elaborado')), _connector='OR'), name='movimiento_solo_un_tipo_insumo')],
             },
         ),
     ]
