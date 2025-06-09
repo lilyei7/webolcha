@@ -16,6 +16,6 @@ class Migration(migrations.Migration):
         ),
         migrations.AddConstraint(
             model_name='ingredienteinsumoelaborado',
-            constraint=models.CheckConstraint(condition=models.Q(models.Q(('insumo__isnull', False), ('insumo_compuesto__isnull', True)), models.Q(('insumo__isnull', True), ('insumo_compuesto__isnull', False)), _connector='OR'), name='ingrediente_elaborado_solo_un_tipo'),
+            constraint=models.CheckConstraint(check=models.Q(...), name='ingrediente_elaborado_solo_un_tipo'),
         ),
     ]
