@@ -32,6 +32,10 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeUserPermissions();
     console.log("✓ Permisos de usuario inicializados");
     
+    // Ocultar elementos de menú según permisos
+    hideMenuItemsForManager();
+    console.log("✓ Elementos de menú ajustados según permisos");
+    
     // NO inicializar el menú de inventario aquí - dejarlo para menu.js
     // setupInventoryMenuAnimation();
     console.log("✓ Menú de inventario se inicializa en menu.js");
@@ -125,8 +129,19 @@ function initializeSubmenuLinks() {
                 alert('Error: Módulo de Entradas y Salidas no disponible');
             }
         }},
+        // Añadir nuevo manejador para el botón de entradas y salidas de insumos
+        { id: 'entradas_salidas_insumos', handler: function() { 
+            console.log('[DEBUG] Click en Entradas y Salidas de Insumos');
+            if (typeof window.loadEntradasSalidasInsumosContent === 'function') {
+                window.loadEntradasSalidasInsumosContent();
+            } else {
+                console.error('La función loadEntradasSalidasInsumosContent no está disponible');
+                alert('Error: Módulo de Entradas y Salidas de Insumos no disponible');
+            }
+        }},
         { id: 'proveedores', handler: loadProveedoresContent },
         { id: 'menu_insumos_compuestos', handler: loadInsumosCompuestosContent },
+        { id: 'menu_insumos_elaborados', handler: loadInsumosElaboradosContent },
         { id: 'recetas', handler: function() { 
             console.log('[DEBUG] Click en Recetas');
             if (typeof window.loadRecetasContent === 'function') {
@@ -201,12 +216,21 @@ function initializeUserMenuHandlers() {
 function loadSucursalesContent() {
     const mainContent = document.querySelector('.main-content');
     mainContent.classList.add('dark-theme');
+    
+    // Verificar si el usuario es gerente (y no es admin ni superusuario)
+    const showAddButton = !(window.userPermissions && 
+                          window.userPermissions.gerente && 
+                          !window.userPermissions.admin && 
+                          !window.userPermissions.superuser);
+    
     mainContent.innerHTML = `
         <div class="section-header">
             <h1>Gestión de Sucursales</h1>
+            ${showAddButton ? `
             <button class="btn-primary" onclick="showAddSucursalModal()">
                 <i class="fa-solid fa-plus"></i> Nueva Sucursal
             </button>
+            ` : ''}
         </div>
         <div class="sucursales-grid" id="sucursalesGrid"></div>
     `;
@@ -215,69 +239,114 @@ function loadSucursalesContent() {
 }
 
 async function loadSucursales() {
+    console.log("🏢 Dashboard: Función loadSucursales ejecutada");
+    
+    // Verificar que existe el grid antes de continuar
+    const grid = document.getElementById('sucursalesGrid');
+    
+    if (!grid) {
+        console.warn("⚠️ No se encontró el grid de sucursales, omitiendo carga");
+        return Promise.resolve();
+    }
+    
+    grid.innerHTML = '<div class="loading">Cargando sucursales...</div>';
+    
     try {
-        const response = await fetch('/sucursales/');
+        // Determinar el endpoint correcto basado en el rol del usuario
+        let endpoint = '/sucursales/';
+        
+        // Si el usuario es gerente, usar el endpoint específico
+        if (window.userPermissions && window.userPermissions.gerente && 
+            !window.userPermissions.admin && !window.userPermissions.superuser) {
+            endpoint = '/sucursales/gerente/';
+            console.log("🔒 Usando endpoint específico para gerentes");
+        }
+        
+        const response = await fetch(endpoint);
         const data = await response.json();
         
         if (data.status === 'success') {
-            const grid = document.getElementById('sucursalesGrid');
-            grid.innerHTML = data.sucursales.map(sucursal => `
-                <div class="sucursal-card">
-                    <div class="sucursal-header">
-                        <h3>${sucursal.nombre}</h3>
-                        <span class="badge ${sucursal.activa ? 'active' : 'inactive'}">
-                            ${sucursal.activa ? 'Activa' : 'Inactiva'}
-                        </span>
+            if (data.sucursales && data.sucursales.length > 0) {
+                grid.innerHTML = data.sucursales.map(sucursal => `
+                    <div class="sucursal-card">
+                        <!-- Contenido de la tarjeta de sucursal (igual que antes) -->
+                        <div class="sucursal-header">
+                            <h3>${sucursal.nombre}</h3>
+                            <span class="badge ${sucursal.activa ? 'active' : 'inactive'}">
+                                ${sucursal.activa ? 'Activa' : 'Inactiva'}
+                            </span>
+                        </div>
+                        <div class="sucursal-info">
+                            <p><i class="fa-solid fa-location-dot"></i> ${sucursal.direccion}</p>
+                            <p><i class="fa-solid fa-building"></i> ${sucursal.ciudad_estado}</p>
+                            <p><i class="fa-solid fa-phone"></i> ${sucursal.telefono}</p>
+                            <p><i class="fa-solid fa-user"></i> Gerente: ${sucursal.gerente}</p>
+                            <p><i class="fa-solid fa-clock"></i> Horarios:</p>
+                            ${Object.entries(sucursal.horarios || {}).map(([dia, horario]) => `
+                                <p class="horario-item">
+                                    ${dia.charAt(0).toUpperCase() + dia.slice(1)}: 
+                                    ${horario.esta_abierto 
+                                        ? `${horario.apertura} - ${horario.cierre}` 
+                                        : 'Cerrado'}
+                                </p>
+                            `).join('')}
+                            <p><i class="fa-solid fa-dollar-sign"></i> Meta Diaria: $${sucursal.meta_diaria.toLocaleString()}</p>
+                        </div>
+                        <div class="sucursal-actions">
+                            <button class="btn-edit" onclick="editSucursal(${sucursal.id})" type="button">
+                                <i class="fa-solid fa-pen"></i> Editar
+                            </button>
+                            <button class="btn-ver" style="
+                                background: linear-gradient(90deg, #f7971e 0%, #ffd200 100%);
+                                color: #1F2937;
+                                border: none;
+                                padding: 0.75rem 1.5rem;
+                                border-radius: 6px;
+                                cursor: pointer;
+                                font-weight: 600;
+                                font-size: 1rem;
+                                box-shadow: 0 2px 8px rgba(255, 210, 0, 0.15);
+                                display: flex;
+                                align-items: center;
+                                gap: 8px;
+                                transition: background 0.3s, color 0.2s, box-shadow 0.3s;
+                            "
+                            onmouseover="this.style.background='linear-gradient(90deg, #ffd200 0%, #f7971e 100%)';this.style.color='#fff';this.style.boxShadow='0 4px 16px rgba(255,210,0,0.25)';"
+                            onmouseout="this.style.background='linear-gradient(90deg, #f7971e 0%, #ffd200 100%)';this.style.color='#1F2937';this.style.boxShadow='0 2px 8px rgba(255,210,0,0.15)';"
+                            onclick="viewSucursal(${sucursal.id})">
+                                <i class="fa-solid fa-eye"></i> Ver
+                            </button>
+                            ${window.userPermissions && window.userPermissions.admin ? `
+                                <button class="btn-delete" onclick="deleteSucursal(${sucursal.id})">
+                                    <i class="fa-solid fa-trash"></i> Eliminar
+                                </button>
+                            ` : ''}
+                        </div>
                     </div>
-                    <div class="sucursal-info">
-                        <p><i class="fa-solid fa-location-dot"></i> ${sucursal.direccion}</p>
-                        <p><i class="fa-solid fa-building"></i> ${sucursal.ciudad_estado}</p>
-                        <p><i class="fa-solid fa-phone"></i> ${sucursal.telefono}</p>
-                        <p><i class="fa-solid fa-user"></i> Gerente: ${sucursal.gerente}</p>
-                        <p><i class="fa-solid fa-clock"></i> Horarios:</p>
-                        ${Object.entries(sucursal.horarios || {}).map(([dia, horario]) => `
-                            <p class="horario-item">
-                                ${dia.charAt(0).toUpperCase() + dia.slice(1)}: 
-                                ${horario.esta_abierto 
-                                    ? `${horario.apertura} - ${horario.cierre}` 
-                                    : 'Cerrado'}
-                            </p>
-                        `).join('')}
-                        <p><i class="fa-solid fa-dollar-sign"></i> Meta Diaria: $${sucursal.meta_diaria.toLocaleString()}</p>
+                `).join('');
+            } else {
+                grid.innerHTML = `
+                    <div class="empty-state" style="text-align: center; padding: 40px;">
+                        <h3>No hay sucursales disponibles</h3>
+                        <p>No se encontraron sucursales para mostrar.</p>
                     </div>
-                    <div class="sucursal-actions">
-                        <button class="btn-edit" onclick="editSucursal(${sucursal.id})" type="button">
-                            <i class="fa-solid fa-pen"></i> Editar
-                        </button>
-                        <button class="btn-ver" style="
-                            background: linear-gradient(90deg, #f7971e 0%, #ffd200 100%);
-                            color: #1F2937;
-                            border: none;
-                            padding: 0.75rem 1.5rem;
-                            border-radius: 6px;
-                            cursor: pointer;
-                            font-weight: 600;
-                            font-size: 1rem;
-                            box-shadow: 0 2px 8px rgba(255, 210, 0, 0.15);
-                            display: flex;
-                            align-items: center;
-                            gap: 8px;
-                            transition: background 0.3s, color 0.2s, box-shadow 0.3s;
-                        "
-                        onmouseover="this.style.background='linear-gradient(90deg, #ffd200 0%, #f7971e 100%)';this.style.color='#fff';this.style.boxShadow='0 4px 16px rgba(255,210,0,0.25)';"
-                        onmouseout="this.style.background='linear-gradient(90deg, #f7971e 0%, #ffd200 100%)';this.style.color='#1F2937';this.style.boxShadow='0 2px 8px rgba(255,210,0,0.15)';"
-                        onclick="viewSucursal(${sucursal.id})">
-                            <i class="fa-solid fa-eye"></i> Ver
-                        </button>
-                        <button class="btn-delete" onclick="deleteSucursal(${sucursal.id})">
-                            <i class="fa-solid fa-trash"></i> Eliminar
-                        </button>
-                    </div>
-                </div>
-            `).join('');
+                `;
+            }
+        } else {
+            throw new Error(data.message || 'Error al cargar las sucursales');
         }
     } catch (error) {
         console.error('Error:', error);
+        grid.innerHTML = `
+            <div class="error-message" style="text-align: center; padding: 30px; color: #e74c3c;">
+                <h3>Error al cargar sucursales</h3>
+                <p>${error.message || 'No se pudieron cargar las sucursales. Por favor intenta nuevamente.'}</p>
+                <button onclick="loadSucursales()" 
+                        style="background: #3498db; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer;">
+                    Reintentar
+                </button>
+            </div>
+        `;
     }
 }
 
@@ -295,13 +364,13 @@ function loadUsuariosContent() {
         </div>
     `;
     
-    // Comprobamos si la función existe antes de llamarla
+    // Llamar a la función de usuarios.js
     if (typeof loadUsuarios === 'function') {
         loadUsuarios();
     } else {
         console.error('La función loadUsuarios no está definida. Asegúrate de que usuarios.js está cargado correctamente.');
         
-        // Carga de ejemplo para evitar que se vea vacío
+        // Mostrar mensaje de carga
         document.getElementById('usuariosGrid').innerHTML = `
             <div style="text-align: center; padding: 20px;">
                 <p style="color: #666;">Cargando usuarios...</p>
@@ -694,13 +763,15 @@ function initializeUserPermissions() {
         }
     }
     
-    // Para desarrollo, forzar admin en caso de error
+    // COMENTAR O ELIMINAR ESTAS LÍNEAS
+    /*
     if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
         if (!window.userPermissions.admin && !window.userPermissions.superuser) {
             console.warn("⚠️ Entorno de desarrollo detectado - Forzando permisos de administrador para pruebas");
             window.userPermissions.admin = true;
         }
     }
+    */
 }
 
 // Función para establecer permisos predeterminados
@@ -711,4 +782,35 @@ function fallbackPermissions() {
         gerente: false,
         superuser: false
     };
+}
+
+// Función para ocultar elementos del menú para gerentes
+function hideMenuItemsForManager() {
+    // Verificar si el usuario es gerente (y no es admin ni superusuario)
+    const isManager = window.userPermissions && 
+                      window.userPermissions.gerente && 
+                      !window.userPermissions.admin && 
+                      !window.userPermissions.superuser;
+    
+    if (isManager) {
+        console.log("👤 Usuario gerente detectado: ocultando elementos de menú restringidos");
+        
+        // Lista de IDs de menú a ocultar para gerentes
+        const restrictedMenuItems = [
+            'menu-insumos-link',
+            'menu_insumos_compuestos',
+            'recetas'
+        ];
+        
+        // Ocultar cada elemento del menú
+        restrictedMenuItems.forEach(itemId => {
+            const menuItem = document.getElementById(itemId);
+            if (menuItem) {
+                menuItem.style.display = 'none';
+                console.log(`✅ Elemento de menú ocultado: ${itemId}`);
+            } else {
+                console.warn(`⚠️ No se encontró el elemento de menú: ${itemId}`);
+            }
+        });
+    }
 }

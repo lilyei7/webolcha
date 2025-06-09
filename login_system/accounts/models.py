@@ -224,6 +224,8 @@ class InsumoCompuesto(models.Model):
     costo_total = models.DecimalField(max_digits=10, decimal_places=2)
     descripcion = models.TextField(blank=True, null=True)
     fecha_creacion = models.DateTimeField(auto_now_add=True)
+    # Nuevo campo:
+    activo = models.BooleanField(default=True)
     
     class Meta:
         db_table = 'insumos_compuestos'
@@ -254,6 +256,9 @@ class Receta(models.Model):
     categoria = models.CharField(max_length=50)
     costo = models.DecimalField(max_digits=10, decimal_places=2)
     descripcion = models.TextField(blank=True, null=True)
+    tiempo_preparacion = models.IntegerField(default=0, help_text="Tiempo en minutos")  
+    porciones = models.IntegerField(default=1, help_text="Número de porciones")
+    activa = models.BooleanField(default=True)
     fecha_creacion = models.DateTimeField(auto_now_add=True)
     
     class Meta:
@@ -352,3 +357,84 @@ class MovimientoInventario(models.Model):
 
     class Meta:
         ordering = ['-fecha_hora']
+
+class InsumoElaborado(models.Model):
+    nombre = models.CharField(max_length=100)
+    categoria = models.CharField(max_length=50)
+    unidad = models.CharField(max_length=50)
+    cantidad = models.DecimalField(max_digits=10, decimal_places=2)
+    costo_total = models.DecimalField(max_digits=10, decimal_places=2)
+    descripcion = models.TextField(blank=True, null=True)
+    tiempo_preparacion = models.IntegerField(default=0, help_text="Tiempo en minutos")
+    metodo_preparacion = models.CharField(max_length=50, blank=True, null=True)
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    activo = models.BooleanField(default=True)
+    
+    class Meta:
+        db_table = 'insumos_elaborados'
+        ordering = ['nombre']
+        
+    def __str__(self):
+        return self.nombre
+
+class IngredienteInsumoElaborado(models.Model):
+    insumo_elaborado = models.ForeignKey(
+        InsumoElaborado, 
+        on_delete=models.CASCADE,
+        related_name='ingredientes'
+    )
+    # Clave que puede ser nula para insumo o insumo_compuesto
+    insumo = models.ForeignKey(
+        Insumo, 
+        on_delete=models.PROTECT,
+        related_name='usado_en_elaborados',
+        null=True, blank=True
+    )
+    insumo_compuesto = models.ForeignKey(
+        InsumoCompuesto,
+        on_delete=models.PROTECT,
+        related_name='usado_en_elaborados',
+        null=True, blank=True
+    )
+    cantidad = models.DecimalField(max_digits=10, decimal_places=2)
+    costo = models.DecimalField(max_digits=10, decimal_places=2)
+    
+    class Meta:
+        db_table = 'ingredientes_insumo_elaborado'
+        constraints = [
+            models.CheckConstraint(
+                check=(
+                    models.Q(insumo__isnull=False, insumo_compuesto__isnull=True) | 
+                    models.Q(insumo__isnull=True, insumo_compuesto__isnull=False)
+                ),
+                name='ingrediente_elaborado_solo_un_tipo'
+            )
+        ]
+        
+    def __str__(self):
+        if self.insumo:
+            ingrediente = self.insumo.nombre
+        else:
+            ingrediente = self.insumo_compuesto.nombre
+        return f"{self.insumo_elaborado.nombre} - {ingrediente}"
+
+class InsumoElaboradoReceta(models.Model):
+    receta = models.ForeignKey(
+        'Receta', 
+        on_delete=models.CASCADE,
+        related_name='insumos_elaborados'
+    )
+    insumo_elaborado = models.ForeignKey(
+        'InsumoElaborado', 
+        on_delete=models.PROTECT,
+        related_name='usado_en_recetas'
+    )
+    cantidad = models.DecimalField(max_digits=10, decimal_places=2)
+    costo = models.DecimalField(max_digits=10, decimal_places=2)
+    
+    class Meta:
+        db_table = 'insumos_elaborados_receta'
+        unique_together = ('receta', 'insumo_elaborado')
+        
+    def __str__(self):
+        return f"{self.receta.nombre} - {self.insumo_elaborado.nombre}"

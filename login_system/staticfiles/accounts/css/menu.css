@@ -1,0 +1,148 @@
+/* Estilos específicos para el menú */
+
+/* Estilo para el contenedor principal del sidebar */
+.sidebar {
+    width: 250px;
+    background: var(--sidebar-bg, #1F2937);
+    color: white;
+    padding: 32px 20px 20px 20px;
+    font-family: 'Inter', sans-serif;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    position: fixed;
+    left: 0;
+    top: 0;
+    z-index: 3000;
+    overflow-y: auto;
+}
+
+/* Estilos para el menú de inventario */
+#menuInventario {
+    position: relative;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px;
+    margin: 4px 0;
+    border-radius: 8px;
+    transition: background 0.3s, color 0.3s;
+}
+
+#menuInventario:hover {
+    background: var(--primary-blue, #3B82F6);
+}
+
+/* Modificar el estilo del submenu para empujar el contenido siguiente */
+#submenuInventario {
+    display: block;
+    max-height: 0;
+    visibility: hidden;
+    opacity: 0;
+    transition: all 0.4s cubic-bezier(0.4,0,0.2,1);
+    overflow: hidden; /* Crucial for max-height animation */
+    background: #2563eb;
+    border-radius: 0 0 8px 8px;
+    margin-left: 12px;
+    margin-top: -4px; /* This can be kept if it aligns visually */
+    margin-bottom: 0; /* Ensures no bottom margin when collapsed */
+    border-left: 2px solid rgba(255, 255, 255, 0.08);
+    position: static;
+    color: #fff;
+    box-shadow: none;
+    padding-top: 0; /* Ensure no padding when collapsed */
+    padding-bottom: 0; /* Ensure no padding when collapsed */
+    border-top-width: 0; /* Ensure no border height when collapsed */
+    border-bottom-width: 0; /* Ensure no border height when collapsed */
+}
+
+/* Estado cuando está desplegado el submenu */
+#submenuInventario.show {
+    /* max-height is set by JS to scrollHeight, 500px is a fallback if JS fails */
+    max-height: 500px !important; 
+    visibility: visible !important;
+    opacity: 1 !important;
+    overflow: hidden !important; /* Should be hidden for max-height transition */
+    padding-top: 8px !important;
+    padding-bottom: 8px !important;
+    margin-bottom: 10px !important; /* Space AFTER the open submenu */
+    /* color, background, box-shadow can remain as they are */
+    color: #fff !important;
+    background: #2563eb !important;
+    box-shadow: 0 4px 16px rgba(37,99,235,0.08);
+}
+
+/* Estilos para los enlaces del submenu - MEJORADOS PARA MAYOR VISIBILIDAD */
+#submenuInventario a {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 15px;
+    color: #fff;
+    text-decoration: none;
+    border-radius: 6px;
+    margin: 0; /* Eliminar margen vertical extra */
+    transition: background 0.2s, color 0.2s, transform 0.2s;
+    font-size: 0.95rem;
+    font-weight: 500;
+    background: transparent;
+}
+
+#submenuInventario a + a {
+    margin-top: 4px; /* Solo separación entre enlaces, no arriba y abajo del bloque */
+}
+
+#submenuInventario a:hover {
+    background: rgba(255,255,255,0.12);
+    color: #fff;
+    transform: translateX(5px);
+}
+
+#submenuInventario a.active {
+    background: #1d4ed8;
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(37,99,235,0.18);
+}
+
+/* Icono de flecha */
+.submenu-icon {
+    transition: transform 0.3s ease;
+}
+
+#menuInventario.active .submenu-icon {
+    transform: rotate(180deg) !important;
+}
+
+/* Ajustes de espaciado para corregir el empuje de los elementos siguientes */
+.sidebar .menu-item {
+    transition: transform 0.4s cubic-bezier(0.4,0,0.2,1), 
+                margin-top 0.4s cubic-bezier(0.4,0,0.2,1);
+    position: relative;
+    z-index: 1;
+}
+
+/* Sidebar wrapper for the submenu - remove margin-bottom: auto */
+.sidebar .submenu-wrapper {
+    display: block;
+    position: relative;
+    overflow: visible; /* This is fine for the wrapper */
+    margin-bottom: 0; /* REMOVE 'auto' and set to 0 to prevent initial gap */
+}
+
+/* Ajustes para iconos dentro del submenu */
+#submenuInventario a i {
+    color: #fff;
+    min-width: 20px;
+    font-size: 1rem;
+}
+
+#submenuInventario a:hover i,
+#submenuInventario a.active i {
+    color: #fff;
+}
+
+/* Corregir posicionamiento del submenu */
+#menuInventario + #submenuInventario {
+    margin-top: -2px; /* Alinear con el menú principal */
+}

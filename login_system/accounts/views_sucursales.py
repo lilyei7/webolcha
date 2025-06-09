@@ -197,3 +197,60 @@ def sucursal_horarios(request, id):
         return JsonResponse({'status': 'error', 'message': 'Sucursal no encontrada'}, status=404)
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+@login_required
+def sucursales_gerente(request):
+    """Endpoint para listar solo las sucursales asignadas al gerente actual."""
+    if request.method == 'GET':
+        try:
+            # Verificar si el usuario tiene el rol de gerente
+            es_gerente = request.user.groups.filter(name='Gerente').exists()
+            if not es_gerente:
+                return JsonResponse({
+                    'status': 'error',
+                    'message': 'Solo los gerentes pueden acceder a este recurso'
+                }, status=403)
+                
+            # Obtener las sucursales asignadas al gerente actual
+            sucursales_asignadas = request.user.sucursales.prefetch_related('horarios').all()
+            
+            # Serializar las sucursales para el frontend
+            sucursales_data = []
+            for s in sucursales_asignadas:
+                horarios = {}
+                for h in s.horarios.all():
+                    horarios[h.dia.lower()] = {
+                        'apertura': h.hora_apertura.strftime('%H:%M') if h.hora_apertura else None,
+                        'cierre': h.hora_cierre.strftime('%H:%M') if h.hora_cierre else None,
+                        'esta_abierto': h.esta_abierto
+                    }
+                
+                sucursales_data.append({
+                    'id': s.id,
+                    'nombre': s.nombre,
+                    'codigo_interno': s.codigo_interno,
+                    'direccion': s.direccion,
+                    'ciudad_estado': s.ciudad_estado,
+                    'telefono': s.telefono,
+                    'gerente': s.gerente,
+                    'activa': s.activa,
+                    'meta_diaria': float(s.meta_diaria or 0),
+                    'horarios': horarios
+                })
+            
+            return JsonResponse({
+                'status': 'success', 
+                'sucursales': sucursales_data
+            })
+            
+        except Exception as e:
+            print(f"Error en sucursales_gerente: {str(e)}")
+            return JsonResponse({
+                'status': 'error',
+                'message': str(e)
+            }, status=500)
+    
+    return JsonResponse({
+        'status': 'error',
+        'message': 'Método no permitido'
+    }, status=405)

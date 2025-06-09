@@ -6,6 +6,7 @@ from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.contrib.auth import get_user_model
 from decimal import Decimal, InvalidOperation
+import json
 
 User = get_user_model()
 
@@ -64,21 +65,24 @@ def dashboard(request):
         from .models import Sucursal
         sucursales = list(Sucursal.objects.values('id', 'nombre'))
         
-    # Permisos explícitos
-    is_admin = user.is_superuser or user.groups.filter(name__in=['Administrador', 'Admin']).exists()
-    is_gerente = user.groups.filter(name='Gerente').exists() or is_admin
-        
+    # Convertir sucursales a JSON válido
+    sucursales_json = json.dumps([
+        {'id': s.id, 'nombre': s.nombre} 
+        for s in request.user.sucursales.all()
+    ])
+    
+    permisos = {
+        'admin': request.user.is_admin,
+        'gerente': request.user.is_gerente,
+        'superuser': request.user.is_superuser,
+        'sucursales': sucursales_json  # Ya es JSON válido
+    }
+    
     # Contexto con permisos exactos
     context = {
         'user_full_name': full_name,
         'rol': rol,
-        'permisos': {
-            'admin': is_admin,
-            'gerente': is_gerente,
-            'empleado': True,  # Todos los usuarios logueados son al menos empleados
-            'superuser': user.is_superuser,
-            'sucursales': sucursales
-        }
+        'permisos': permisos
     }
     
     return render(request, 'accounts/dashboard.html', context)

@@ -14,30 +14,34 @@
 
     <!-- Token CSRF -->
     {% csrf_token %}
-    
-    <!-- Primero: Definir los permisos -->
+
+    <!-- Permisos de usuario -->
     {{ permisos|json_script:"user-permissions" }}
     <script>
-        // Crear objeto global para permisos de usuario
         window.userPermissions = JSON.parse(document.getElementById('user-permissions').textContent);
         window.userRole = "{{ rol }}";
         console.log("Permisos del usuario cargados:", window.userPermissions);
     </script>
 
-    <!-- Luego cargar permissions.js y luego usuarios.js -->
-    <!-- Luego: Cargar el resto de scripts -->
+    <!-- Scripts básicos -->
     <script src="{% static 'accounts/js/permissions.js' %}"></script>
     <script src="{% static 'accounts/js/usuarios.js' %}"></script>
     <script src="{% static 'accounts/js/menu.js' %}"></script>
-    <script src="{% static 'accounts/js/debug-menu.js' %}"></script>
-    
-    <!-- Componentes funcionales -->
+
+    <!-- Scripts de componentes -->
     <script src="{% static 'accounts/js/proveedores.js' %}"></script>
     <script src="{% static 'accounts/js/insumos.js' %}"></script>
-    <script src="{% static 'accounts/js/insumosRecetas.js' %}"></script>
     <script src="{% static 'accounts/js/insumos_compuestos.js' %}"></script>
-    <script src="{% static 'accounts/js/crudRecetas.js' %}"></script>
+
+    <!-- Scripts de recetas - ORDEN CORRECTO -->
+    <script src="{% static 'accounts/js/recetas-core.js' %}"></script>
+    <script src="{% static 'accounts/js/recetas-data.js' %}"></script>
+    <script src="{% static 'accounts/js/recetas-ingredientes.js' %}"></script>
+    <script src="{% static 'accounts/js/recetas-modal.js' %}"></script>
+    <script src="{% static 'accounts/js/recetas-crud.js' %}"></script>
     <script src="{% static 'accounts/js/recetas.js' %}"></script>
+
+    <!-- Scripts finales -->
     <script src="{% static 'accounts/js/entradas_salidas.js' %}"></script>
     <script src="{% static 'accounts/js/dashboard.js' %}"></script>
     <script src="{% static 'accounts/js/notifications.js' %}"></script>

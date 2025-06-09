@@ -263,18 +263,25 @@ function createProveedorModalHtml() {
 
 // Función para obtener el token CSRF
 function getCsrfToken() {
+    // Método 1: Buscar un elemento con el token
     const tokenElement = document.querySelector('[name=csrfmiddlewaretoken]');
     if (tokenElement) {
         return tokenElement.value;
     }
     
-    // Si no hay elemento con el token, intentar leerlo de las cookies
+    // Método 2: Buscar en las cookies
     const cookies = document.cookie.split(';');
     for (let i = 0; i < cookies.length; i++) {
         const cookie = cookies[i].trim();
         if (cookie.startsWith('csrftoken=')) {
             return cookie.substring('csrftoken='.length);
         }
+    }
+    
+    // Método 3: Buscar en meta tags
+    const metaTag = document.querySelector('meta[name="csrf-token"]');
+    if (metaTag) {
+        return metaTag.getAttribute('content');
     }
     
     console.error('No se pudo encontrar el token CSRF');
@@ -740,15 +747,18 @@ function showProductosModal(productos, proveedorNombre, proveedorId, insumos = [
         </div>`;
     }
     
-    // Añadir mensaje de instrucción
-    document.getElementById('insumosContent').insertAdjacentHTML('afterbegin', `
-        <div style="margin-bottom: 15px; padding: 10px; background-color: #eff6ff; border-radius: 6px; border-left: 4px solid #3b82f6;">
-            <p style="margin: 0; color: #1e40af; font-size: 0.95rem;">
-                <i class="fa-solid fa-info-circle" style="margin-right: 5px;"></i>
-                Selecciona los insumos que provee este proveedor y asigna sus costos unitarios. El costo se habilita automáticamente al marcar la casilla.
-            </p>
-        </div>
-    `);
+    // Añadir mensaje de instrucción (solo una vez)
+    const instructionMessage = document.querySelector('#insumosContent .instruccion-mensaje');
+    if (!instructionMessage) {
+        document.getElementById('insumosContent').insertAdjacentHTML('afterbegin', `
+            <div class="instruccion-mensaje" style="margin-bottom: 15px; padding: 10px; background-color: #eff6ff; border-radius: 6px; border-left: 4px solid #3b82f6;">
+                <p style="margin: 0; color: #1e40af; font-size: 0.95rem;">
+                    <i class="fa-solid fa-info-circle" style="margin-right: 5px;"></i>
+                    Selecciona los insumos que provee este proveedor y asigna sus costos unitarios. El costo se habilita automáticamente al marcar la casilla.
+                </p>
+            </div>
+        `);
+    }
     
     // Prerellenar costos existentes si el insumo ya está asignado al proveedor
     if (productos && productos.length > 0) {
@@ -772,62 +782,217 @@ function showProductosModal(productos, proveedorNombre, proveedorId, insumos = [
     productosModal.style.display = 'flex';
 }
 
+// 1. Asegurar que la función toggleCostoInput esté disponible globalmente
+window.toggleCostoInput = function(checkbox) {
+    const insumoItem = checkbox.closest('.insumo-item');
+    const costoInput = insumoItem.querySelector('.insumo-costo');
+    const costoContainer = insumoItem.querySelector('.costo-container');
+    
+    if (checkbox.checked) {
+        // Habilitar y dar estilo activo
+        costoInput.disabled = false;
+        costoInput.required = true; // Hacer que el campo sea requerido
+        costoInput.focus();
+        costoContainer.style.backgroundColor = '#ffffff';
+        costoContainer.style.borderColor = '#6366f1';
+        costoContainer.style.boxShadow = '0 0 0 2px rgba(99, 102, 241, 0.1)';
+        insumoItem.style.backgroundColor = '#fafbff';
+        
+        // Si el valor actual es cero o vacío, establecer un valor por defecto
+        if (!costoInput.value || parseFloat(costoInput.value) === 0) {
+            costoInput.value = '';
+            costoInput.placeholder = 'Ingresa costo';
+        }
+        
+        // Añadir mensaje de ayuda
+        if (!insumoItem.querySelector('.costo-help')) {
+            const helpText = document.createElement('small');
+            helpText.className = 'costo-help';
+            helpText.textContent = 'Ingresa un costo mayor que 0';
+            helpText.style.fontSize = '0.75rem';
+            helpText.style.color = '#6366f1';
+            helpText.style.display = 'block';
+            helpText.style.marginTop = '3px';
+            costoContainer.parentNode.appendChild(helpText);
+        }
+    } else {
+        // Deshabilitar y restaurar estilo
+        costoInput.disabled = true;
+        costoInput.required = false;
+        costoInput.value = '';
+        costoContainer.style.backgroundColor = '#f9fafb';
+        costoContainer.style.borderColor = '#e5e7eb';
+        costoContainer.style.boxShadow = 'none';
+        insumoItem.style.backgroundColor = '#ffffff';
+        
+        // Eliminar mensaje de ayuda si existe
+        const helpText = insumoItem.querySelector('.costo-help');
+        if (helpText) helpText.remove();
+        
+        // Eliminar mensaje de error si existe
+        const errorMsg = insumoItem.querySelector('.error-message');
+        if (errorMsg) errorMsg.remove();
+    }
+    
+    // Actualizar contador
+    updateSelectedCounter();
+};
+
 // Función para asignar insumos al proveedor
 async function asignarInsumosAProveedor(proveedorId) {
     try {
+        console.log(`Iniciando asignación de insumos al proveedor ID: ${proveedorId}`);
+        
         // Crear un array para almacenar los datos de los insumos seleccionados
         const insumosData = [];
+        const checkboxes = document.querySelectorAll('.insumo-checkbox:checked');
         
-        // Recorrer todos los checkboxes seleccionados
-        document.querySelectorAll('.insumo-checkbox:checked').forEach(checkbox => {
-            const insumoId = checkbox.value;
-            const costoInput = checkbox.closest('.insumo-item').querySelector('.insumo-costo');
-            const costo = parseFloat(costoInput.value) || 0;
-            
-            // Validar que el costo sea un número válido
-            if (isNaN(costo) || costo < 0) {
-                throw new Error(`Por favor ingresa un costo válido para todos los insumos seleccionados`);
-            }
-            
-            insumosData.push({
-                id: insumoId,
-                costo: costo
-            });
-        });
+        console.log(`Total insumos seleccionados: ${checkboxes.length}`);
         
-        if (insumosData.length === 0) {
+        // Validar que haya al menos un insumo seleccionado
+        if (checkboxes.length === 0) {
             showNotification('Selecciona al menos un insumo para asignar', 'error');
             return;
         }
+        
+        let hasErrors = false;
+        let firstErrorInput = null;
+        
+        // Recorrer todos los checkboxes seleccionados
+        checkboxes.forEach(checkbox => {
+            const insumoId = parseInt(checkbox.value);
+            const insumoItem = checkbox.closest('.insumo-item');
+            const insumoNombre = insumoItem.querySelector('.insumo-nombre').textContent;
+            const costoInput = insumoItem.querySelector('.insumo-costo');
+            const costo = parseFloat(costoInput.value);
+            
+            // Validar que el costo sea un número válido y mayor que cero
+            if (isNaN(costo) || costo <= 0) {
+                costoInput.style.borderColor = '#ef4444';
+                costoInput.style.backgroundColor = '#fef2f2';
+                
+                // Mostrar mensaje de error debajo del input
+                const errorMsg = document.createElement('div');
+                errorMsg.className = 'error-message';
+                errorMsg.textContent = 'Ingresa un costo válido';
+                errorMsg.style.color = '#ef4444';
+                errorMsg.style.fontSize = '0.75rem';
+                errorMsg.style.marginTop = '2px';
+                
+                // Eliminar mensaje anterior si existe
+                const previousError = insumoItem.querySelector('.error-message');
+                if (previousError) {
+                    previousError.remove();
+                }
+                
+                costoInput.parentNode.appendChild(errorMsg);
+                
+                hasErrors = true;
+                if (!firstErrorInput) firstErrorInput = costoInput;
+            } else {
+                // Si es válido, restaurar estilo normal
+                costoInput.style.borderColor = '#e5e7eb';
+                costoInput.style.backgroundColor = '#ffffff';
+                
+                // Eliminar mensaje de error si existe
+                const errorMsg = insumoItem.querySelector('.error-message');
+                if (errorMsg) {
+                    errorMsg.remove();
+                }
+                
+                // CORRECCIÓN: Usar los nombres de campo que espera el backend
+                insumosData.push({
+                    insumo_id: insumoId,
+                    costo_unitario: costo,
+                    es_principal: false // Valor por defecto
+                });
+            }
+        });
+        
+        // Si hay errores, enfocar el primer campo con error y detener
+        if (hasErrors) {
+            if (firstErrorInput) firstErrorInput.focus();
+            showNotification('Revisa los campos con errores', 'error');
+            return;
+        }
+        
+        // Obtener el CSRF token
+        const csrfToken = getCsrfToken();
+        if (!csrfToken) {
+            console.error("No se pudo obtener el token CSRF");
+            showNotification("Error de seguridad: No se pudo obtener el token CSRF", 'error');
+            return;
+        }
+        
+        console.log('Enviando datos al servidor:', {
+            proveedorId: proveedorId,
+            insumos: insumosData,
+        });
+        
+        // Mostrar indicador de carga
+        const asignarBtn = document.getElementById('asignarInsumosBtn');
+        const btnOriginalText = asignarBtn.innerHTML;
+        asignarBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Asignando...';
+        asignarBtn.disabled = true;
         
         // Enviar la solicitud para asignar insumos con sus costos
         const response = await fetch(`/api/proveedores/${proveedorId}/asignar-insumos/`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRFToken': getCsrfToken()
+                'X-CSRFToken': csrfToken,
+                'X-Requested-With': 'XMLHttpRequest'
             },
             body: JSON.stringify({
                 insumos: insumosData
             })
         });
         
+        // Restaurar el botón
+        asignarBtn.innerHTML = btnOriginalText;
+        asignarBtn.disabled = false;
+        
+        if (!response.ok) {
+            let errorMessage = `Error HTTP: ${response.status}`;
+            try {
+                const errorData = await response.json();
+                errorMessage = errorData.message || errorMessage;
+            } catch (e) {
+                // Si no podemos parsear como JSON, usamos el texto del error
+                const errorText = await response.text();
+                if (errorText) errorMessage = errorText;
+            }
+            throw new Error(errorMessage);
+        }
+        
+        // Procesar la respuesta
         const data = await response.json();
+        console.log('Datos de respuesta:', data);
         
         if (data.status === 'success') {
-            showNotification('Insumos asignados correctamente');
+            showNotification('Insumos asignados correctamente', 'success');
             
-            // Actualizar la lista de productos
-            verProductosProveedor(proveedorId);
-            
-            // Cambiar a la pestaña de productos
-            document.getElementById('tabProductos').click();
+            // Añadir un pequeño delay antes de recargar
+            setTimeout(() => {
+                // Actualizar la lista de productos
+                verProductosProveedor(proveedorId);
+                
+                // Cambiar a la pestaña de productos
+                document.getElementById('tabProductos').click();
+            }, 500);
         } else {
             throw new Error(data.message || 'Error al asignar insumos');
         }
     } catch (error) {
-        console.error('Error:', error);
+        console.error('Error en asignarInsumosAProveedor:', error);
         showNotification(`Error: ${error.message}`, 'error');
+        
+        // Restaurar el botón si hubo un error
+        const asignarBtn = document.getElementById('asignarInsumosBtn');
+        if (asignarBtn && asignarBtn.disabled) {
+            asignarBtn.innerHTML = '<i class="fa-solid fa-link"></i> Asignar Insumos Seleccionados';
+            asignarBtn.disabled = false;
+        }
     }
 }
 
@@ -863,63 +1028,58 @@ function showNotification(message, type = 'success') {
     }, 3000);
 }
 
-// Función mejorada para activar/desactivar el campo de costo (estilo minimalista)
-function toggleCostoInput(checkbox) {
+// Función mejorada para activar/desactivar el campo de costo
+window.toggleCostoInput = function(checkbox) {
     const insumoItem = checkbox.closest('.insumo-item');
     const costoInput = insumoItem.querySelector('.insumo-costo');
     const costoContainer = insumoItem.querySelector('.costo-container');
     
     if (checkbox.checked) {
-        // Habilitar y dar estilo activo minimalista
+        // Habilitar y dar estilo activo
         costoInput.disabled = false;
+        costoInput.required = true; // Hacer que el campo sea requerido
         costoInput.focus();
         costoContainer.style.backgroundColor = '#ffffff';
         costoContainer.style.borderColor = '#6366f1';
         costoContainer.style.boxShadow = '0 0 0 2px rgba(99, 102, 241, 0.1)';
-        
-        // Efecto sutil en toda la fila
         insumoItem.style.backgroundColor = '#fafbff';
-        insumoItem.style.borderColor = '#e0e7ff';
-        insumoItem.style.transform = 'translateY(-0.5px)';
+        
+        // Si el valor actual es cero o vacío, establecer un valor por defecto
+        if (!costoInput.value || parseFloat(costoInput.value) === 0) {
+            costoInput.value = '';
+            costoInput.placeholder = 'Ingresa costo';
+        }
+        
+        // Añadir mensaje de ayuda
+        if (!insumoItem.querySelector('.costo-help')) {
+            const helpText = document.createElement('small');
+            helpText.className = 'costo-help';
+            helpText.textContent = 'Ingresa un costo mayor que 0';
+            helpText.style.fontSize = '0.75rem';
+            helpText.style.color = '#6366f1';
+            helpText.style.display = 'block';
+            helpText.style.marginTop = '3px';
+            costoContainer.parentNode.appendChild(helpText);
+        }
     } else {
         // Deshabilitar y restaurar estilo
         costoInput.disabled = true;
+        costoInput.required = false;
         costoInput.value = '';
         costoContainer.style.backgroundColor = '#f9fafb';
         costoContainer.style.borderColor = '#e5e7eb';
         costoContainer.style.boxShadow = 'none';
-        
-        // Restaurar estilo de la fila
         insumoItem.style.backgroundColor = '#ffffff';
-        insumoItem.style.borderColor = '#f1f5f9';
-        insumoItem.style.transform = 'translateY(0)';
+        
+        // Eliminar mensaje de ayuda si existe
+        const helpText = insumoItem.querySelector('.costo-help');
+        if (helpText) helpText.remove();
+        
+        // Eliminar mensaje de error si existe
+        const errorMsg = insumoItem.querySelector('.error-message');
+        if (errorMsg) errorMsg.remove();
     }
     
-    // Actualizar contador de seleccionados
+    // Actualizar contador
     updateSelectedCounter();
-}
-
-// Función para actualizar el contador con estilo minimalista
-function updateSelectedCounter() {
-    const selectedCount = document.querySelectorAll('.insumo-checkbox:checked').length;
-    const counterElement = document.getElementById('selectedCounter');
-    const insumosListElement = document.querySelector('.insumos-list');
-    
-    // If the counter already exists, just update it
-    if (counterElement) {
-        counterElement.textContent = selectedCount;
-        counterElement.parentElement.style.display = selectedCount > 0 ? 'block' : 'none';
-    } 
-    // Otherwise create it, but only if the insumos-list container exists
-    else if (insumosListElement) {
-        const counterHtml = `
-            <div id="selectedCounterContainer" style="margin: 12px 0; text-align: right; ${selectedCount > 0 ? '' : 'display: none;'}">
-                <div style="display: inline-flex; align-items: center; background-color: #6366f1; color: white; padding: 6px 12px; border-radius: 16px; font-size: 0.8rem; font-weight: 500; box-shadow: 0 2px 4px rgba(99, 102, 241, 0.2);">
-                    <i class="fa-solid fa-check-circle" style="margin-right: 6px; font-size: 0.8rem;"></i>
-                    <span id="selectedCounter">${selectedCount}</span> seleccionado${selectedCount > 1 ? 's' : ''}
-                </div>
-            </div>
-        `;
-        insumosListElement.insertAdjacentHTML('afterend', counterHtml);
-    }
-}
+};

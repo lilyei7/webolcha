@@ -1,0 +1,238 @@
+.notifications-menu {
+    position: relative;
+    margin-right: 20px;
+}
+
+.bell-wrapper {
+    position: relative;
+    cursor: pointer;
+    padding: 8px;
+}
+
+.bell-wrapper i {
+    font-size: 1.4rem;
+    color: #4a5568;
+    transition: transform 0.3s ease;
+}
+
+.bell-wrapper:hover i {
+    transform: rotate(10deg);
+}
+
+.notification-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: #e53e3e;
+    color: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    border: 2px solid #fff;
+}
+
+.notification-badge.pulse {
+    animation: pulse-ring 2s infinite;
+}
+
+@keyframes pulse-ring {
+    0% {
+        transform: translate(25%, -25%) scale(0.95);
+        box-shadow: 0 0 0 0 rgba(229, 62, 62, 0.7);
+    }
+    
+    70% {
+        transform: translate(25%, -25%) scale(1);
+        box-shadow: 0 0 0 10px rgba(229, 62, 62, 0);
+    }
+    
+    100% {
+        transform: translate(25%, -25%) scale(0.95);
+        box-shadow: 0 0 0 0 rgba(229, 62, 62, 0);
+    }
+}
+
+.notifications-dropdown {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: -10px;
+    width: 360px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.3s ease;
+    z-index: 1000;
+}
+
+.notifications-dropdown.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.notifications-header {
+    padding: 16px;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.notifications-header h3 {
+    font-size: 1.1rem;
+    color: #1f2937;
+    font-weight: 600;
+    margin: 0;
+}
+
+.mark-all-read {
+    background: none;
+    border: none;
+    color: #3b82f6;
+    font-size: 0.875rem;
+    cursor: pointer;
+    padding: 6px 12px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.mark-all-read:hover {
+    background-color: #eff6ff;
+}
+
+.notifications-list {
+    max-height: 300px;
+    overflow-y: auto;
+    padding: 8px 0;
+}
+
+.notification-item {
+    padding: 16px;
+    background: white;
+    border-bottom: 1px solid #f0f0f0;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.notification-item:hover {
+    background-color: #f8fafc;
+}
+
+.notification-item i {
+    background: #f3f4f6;
+    padding: 10px;
+    border-radius: 10px;
+    font-size: 1.2rem;
+}
+
+.notification-item.user_created i {
+    background-color: #eff6ff;
+    color: #3b82f6;
+}
+
+.notification-item.sucursal_created i {
+    background-color: #ecfdf5;
+    color: #059669;
+}
+
+.notification-item.system i {
+    color: #7c3aed;
+    background: #f5f3ff;
+}
+
+.notification-item.login i {
+    color: #dc2626;
+    background: #fef2f2;
+}
+
+.notification-item.sucursal_updated i {
+    color: #d97706;
+    background: #fffbeb;
+}
+
+.notification-item.inventory_update i {
+    background-color: #faf5ff;
+    color: #7c3aed;
+}
+
+.notification-item.system_alert i {
+    background-color: #fff1f2;
+    color: #e11d48;
+}
+
+.notification-content {
+    flex: 1;
+}
+
+.notification-title {
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 4px;
+    font-size: 0.95rem;
+}
+
+.notification-message {
+    color: #000000;
+    font-size: 0.875rem;
+    margin-bottom: 8px;
+    line-height: 1.4;
+    text-decoration-color: #000000;
+    text-decoration-style: solid;
+}
+
+.notification-time {
+    color: #9ca3af;
+    font-size: 0.75rem;
+}
+
+.notification-item.unread {
+    background-color: #f0f9ff;
+    border-left: 4px solid #3b82f6;
+}
+
+.notification-item.unread .notification-title {
+    color: #000;
+}
+
+.notification-item.unread::before {
+    content: '';
+    display: block;
+    width: 8px;
+    height: 8px;
+    background: #3b82f6;
+    border-radius: 50%;
+    margin-top: 6px;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.notifications-empty {
+    padding: 32px 16px;
+    text-align: center;
+    color: #9ca3af;
+}
+
+.notifications-empty i {
+    font-size: 2rem;
+    margin-bottom: 8px;
+}

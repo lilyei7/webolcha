@@ -103,6 +103,30 @@ function canDelete(resourceType, resourceData = {}) {
     return canEdit(resourceType, resourceData);
 }
 
+// Inicializar permisos al cargar la página
+document.addEventListener('DOMContentLoaded', function() {
+    console.log("Inicializando permisos desde permissions.js");
+    
+    const permissionsElement = document.getElementById('user-permissions-data');
+    if (permissionsElement) {
+        try {
+            const permissionsData = JSON.parse(permissionsElement.textContent.trim());
+            window.userPermissions = {
+                admin: permissionsData.admin === true,
+                gerente: permissionsData.gerente === true,
+                superuser: permissionsData.superuser === true,
+                sucursales: permissionsData.sucursales || []
+            };
+            console.log("✅ Permisos cargados correctamente:", window.userPermissions);
+        } catch (e) {
+            console.error("❌ Error al parsear permisos:", e);
+            console.error("Contenido del elemento:", permissionsElement.textContent);
+        }
+    } else {
+        console.warn("⚠️ No se encontró el elemento con los permisos");
+    }
+});
+
 // Inicializar la interfaz basada en permisos
 document.addEventListener('DOMContentLoaded', function() {
     // Elementos solo visibles para administradores

@@ -214,10 +214,36 @@ def asignar_insumos_proveedor(request, id):
             
         # Procesar cada insumo
         insumos_asignados = 0
+        errores = []
+        
         for insumo_info in insumos_data:
             try:
-                insumo = Insumo.objects.get(id=insumo_info['insumo_id'])
-                costo = Decimal(str(insumo_info['costo_unitario']))
+                # Verificar si tenemos los campos necesarios
+                if 'insumo_id' not in insumo_info:
+                    errores.append(f"Falta el ID del insumo en un elemento")
+                    continue
+                    
+                if 'costo_unitario' not in insumo_info:
+                    errores.append(f"Falta el costo unitario para el insumo {insumo_info.get('insumo_id')}")
+                    continue
+                
+                # Validar que el costo sea mayor que cero
+                try:
+                    costo = Decimal(str(insumo_info['costo_unitario']))
+                    if costo <= 0:
+                        errores.append(f"El costo debe ser mayor que cero para el insumo {insumo_info['insumo_id']}")
+                        continue
+                except (InvalidOperation, ValueError):
+                    errores.append(f"Costo inválido para el insumo {insumo_info['insumo_id']}")
+                    continue
+                
+                # Buscar el insumo
+                try:
+                    insumo = Insumo.objects.get(id=insumo_info['insumo_id'])
+                except Insumo.DoesNotExist:
+                    errores.append(f"Insumo con ID {insumo_info['insumo_id']} no encontrado")
+                    continue
+                 
                 es_principal = insumo_info.get('es_principal', False)
                 
                 # Crear o actualizar la relación
@@ -230,19 +256,31 @@ def asignar_insumos_proveedor(request, id):
                     }
                 )
                 
-                if created:
-                    insumos_asignados += 1
-                    
-            except (Insumo.DoesNotExist, InvalidOperation, KeyError) as e:
-                print(f"Error procesando insumo {insumo_info}: {e}")
+                insumos_asignados += 1
+                   
+            except Exception as e:
+                print(f"Error procesando insumo {insumo_info}: {str(e)}")
+                errores.append(f"Error al procesar insumo: {str(e)}")
                 continue
-                
-        return JsonResponse({
-            'status': 'success',
-            'message': f'Se asignaron {insumos_asignados} insumos al proveedor {proveedor.nombre}',
-            'insumos_asignados': insumos_asignados
-        })
         
+        if insumos_asignados > 0:
+            mensaje_respuesta = f'Se asignaron {insumos_asignados} insumos al proveedor {proveedor.nombre}'
+            if errores:
+                mensaje_respuesta += f', pero hubo {len(errores)} errores'
+                
+            return JsonResponse({
+                'status': 'success',
+                'message': mensaje_respuesta,
+                'insumos_asignados': insumos_asignados,
+                'errores': errores
+            })
+        else:
+            return JsonResponse({
+                'status': 'error',
+                'message': 'No se pudo asignar ningún insumo',
+                'errores': errores
+            }, status=400)
+            
     except Proveedor.DoesNotExist:
         return JsonResponse({
             'status': 'error',

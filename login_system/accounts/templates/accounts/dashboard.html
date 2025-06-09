@@ -2,9 +2,11 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Punto1208</title>
     <link rel="stylesheet" href="{% static 'accounts/css/styles.css' %}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{% static 'accounts/css/usuarios.css' %}">
     <link rel="stylesheet" href="{% static 'accounts/css/insumos.css' %}">
     <link rel="stylesheet" href="{% static 'accounts/css/notifications.css' %}">
@@ -34,9 +36,12 @@
                 </div>
                 <div class="submenu" id="submenuInventario">
                     <a href="#" id="entradas_salidas"><i class="fa-solid fa-exchange-alt"></i> Entradas y salidas</a>
+                    <a href="#" id="entradas_salidas_insumos"><i class="fa-solid fa-arrows-rotate"></i> Entradas y salidas de insumos</a>
+                    
                     <a href="#" id="proveedores"><i class="fa-solid fa-truck"></i> Proveedores</a>
                     <a href="#" id="menu-insumos-link"><i class="fa-solid fa-carrot"></i> Insumos</a>
                     <a href="#" id="menu_insumos_compuestos"><i class="fa-solid fa-blender"></i> Insumos compuestos</a>
+                    <a href="#" id="menu_insumos_elaborados"><i class="fa-solid fa-shrimp"></i> Insumos elaborados</a>
                     <a href="#" id="recetas"><i class="fa-solid fa-book"></i> Recetas</a>
                     <a href="#" id="reportes"><i class="fa-solid fa-chart-bar"></i> Reportes</a>
                 </div>
@@ -158,7 +163,7 @@
                 </table>
             </div>
 
-            <footer>
+            <footer style="color: black; text-align: center; padding: 10px; background-color: #f1f1f1; position: fixed; bottom: 0; width: 100%;">
                 Sistema desarrollado por OLCHA Technologies 2025. Todos los derechos reservados.
             </footer>
         </main>
@@ -351,27 +356,43 @@
                 <button type="button" class="btn-secondary" onclick="closeHorariosModal()">Cancelar</button>            </div>
         </div>    </div>
     <!-- Corrección de scripts - actualizar orden para cargar insumos.js antes de dashboard.js -->
-       <!-- Actualiza esta sección en dashboard.html -->
-    <script id="user-permissions-data" type="application/json">
-    {
-        "admin": {{ permisos.admin|yesno:"true,false" }},
-        "gerente": {{ permisos.gerente|yesno:"true,false" }},
-        "superuser": {{ permisos.superuser|yesno:"true,false" }},
-        "sucursales": {{ permisos.sucursales|safe|default:"[]" }}
-    }
-    </script>
-    <script src="{% static 'accounts/js/permissions.js' %}"></script>
-    <script src="{% static 'accounts/js/menu.js' %}"></script>
-    <script src="{% static 'accounts/js/debug-menu.js' %}"></script>
-    <script src="{% static 'accounts/js/proveedores.js' %}"></script>
-    <script src="{% static 'accounts/js/insumos.js' %}"></script>
-    <script src="{% static 'accounts/js/insumos_compuestos.js' %}"></script>
-    <script src="{% static 'accounts/js/recetas.js' %}"></script>
-    <script src="{% static 'accounts/js/entradas_salidas.js' %}"></script> <!-- AGREGAR ESTA LÍNEA -->
-    <script src="{% static 'accounts/js/dashboard.js' %}"></script>
-    <script src="{% static 'accounts/js/usuarios.js' %}"></script>
-    <script src="{% static 'accounts/js/usuarios_form.js' %}"></script> <!-- AGREGAR ESTA LÍNEA -->
-    <script src="{% static 'accounts/js/notifications.js' %}"></script>
+    <!-- 1. Primero: Permisos y datos básicos -->
+<script id="user-permissions-data" type="application/json">
+{
+    "admin": {{ permisos.admin|yesno:"true,false" }},
+    "gerente": {{ permisos.gerente|yesno:"true,false" }},
+    "superuser": {{ permisos.superuser|yesno:"true,false" }},
+    "sucursales": {{ permisos.sucursales|safe }}
+}
+</script>
+
+<script>
+    // Definir el ID del usuario currentUserId
+    window.currentUserId = {{ request.user.id }};
+</script>
+
+<!-- 2. Segundo: Utilidades base -->
+<script src="{% static 'accounts/js/permissions.js' %}"></script>
+
+<!-- 3. Tercero: Componentes funcionales (en orden de dependencias) -->
+<script src="{% static 'accounts/js/proveedores.js' %}"></script>
+<script src="{% static 'accounts/js/insumos.js' %}"></script>
+<script src="{% static 'accounts/js/insumosRecetas.js' %}"></script>  <!-- ANTES de crudRecetas -->
+<script src="{% static 'accounts/js/crudRecetas.js' %}"></script>      <!-- DESPUÉS de insumosRecetas -->
+<script src="{% static 'accounts/js/insumos_compuestos.js' %}"></script>
+<script src="{% static 'accounts/js/recetas.js' %}"></script>
+<script src="{% static 'accounts/js/entradas_salidas.js' %}"></script>
+<script src="{% static 'accounts/js/entradasysalidasinsumos.js' %}"></script>
+<script src="{% static 'accounts/js/insumos_elaborados.js' %}"></script>
+
+<!-- 4. Cuarto: Usuarios (con sus dependencias específicas) -->
+<script src="{% static 'accounts/js/usuarios.js' %}"></script>
+
+<!-- 5. Quinto: Componentes de interfaz -->
+<script src="{% static 'accounts/js/menu.js' %}"></script>
+<script src="{% static 'accounts/js/debug-menu.js' %}"></script>
+<script src="{% static 'accounts/js/dashboard.js' %}"></script>
+<script src="{% static 'accounts/js/notifications.js' %}"></script>
 
 </body>
 </html>

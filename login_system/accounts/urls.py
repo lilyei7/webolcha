@@ -3,7 +3,7 @@ from . import views
 
 # Importar las vistas especializadas
 from .views_usuarios import usuarios_crud, usuario_detail, obtener_sucursales_para_usuario
-from .views_sucursales import sucursales_crud, sucursal_detail, sucursal_horarios
+from .views_sucursales import sucursales_crud, sucursal_detail, sucursal_horarios, sucursales_gerente  # Añadir la importación
 from .views_notifications import notifications_api, mark_notifications_read
 from .views_insumos import insumos_crud, insumo_detail
 from .views_categorias import categorias_crud
@@ -11,6 +11,10 @@ from .views_proveedores import proveedores_crud, proveedor_productos, asignar_in
 from .views_movimientos import movimientos_crud, movimiento_detail, cancelar_movimiento, sucursal_insumos
 from .views_compuestos import insumos_compuestos_crud, obtener_insumos_para_compuesto, insumo_compuesto_detail
 from .views_recetas import recetas_crud, receta_detail, obtener_insumos_para_receta, obtener_insumos_compuestos_para_receta
+from .views_elaborados import insumos_elaborados_crud, obtener_insumos_para_elaborado, insumo_elaborado_detail
+from .views_elaborados import obtener_insumos_compuestos_para_elaborado
+from .views_recetas import obtener_insumos_elaborados_para_recetas  # Importar la función específica
+from .views_movimientos_insumos import movimientos_insumos_crud
 
 urlpatterns = [
     # URLs principales
@@ -60,4 +64,19 @@ urlpatterns = [
     path('recetas/<int:id>/', receta_detail, name='receta_detail'),
     path('insumos-para-receta/', obtener_insumos_para_receta, name='obtener_insumos_para_receta'),
     path('insumos-compuestos-para-receta/', obtener_insumos_compuestos_para_receta, name='obtener_insumos_compuestos_para_receta'),
+
+    # Añadir la URL para sucursales de gerente
+    path('sucursales/gerente/', sucursales_gerente, name='sucursales_gerente'),  # Usa la función importada
+
+    # URLs de insumos elaborados
+    path('insumos-elaborados/', insumos_elaborados_crud, name='insumos_elaborados_crud'),
+    path('insumos-elaborados/<int:id>/', insumo_elaborado_detail, name='insumo_elaborado_detail'),
+    path('insumos-para-elaborado/', obtener_insumos_para_elaborado, name='obtener_insumos_para_elaborado'),
+    path('insumos-compuestos-para-elaborado/', obtener_insumos_compuestos_para_elaborado, name='obtener_insumos_compuestos_para_elaborado'),
+
+    # Añadir esta URL
+    path('insumos-elaborados-para-recetas/', obtener_insumos_elaborados_para_recetas, name='obtener_insumos_elaborados_para_recetas'),
+
+    # URLs para movimientos de insumos compuestos y elaborados
+    path('movimientos-insumos/', movimientos_insumos_crud, name='movimientos_insumos_crud'),
 ]

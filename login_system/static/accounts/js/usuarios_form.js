@@ -37,37 +37,60 @@ async function editUser(userId) {
             // Estado activo/inactivo
             document.getElementById('activo').checked = user.activo;
             
-            // MANEJO MEJORADO DE ROLES
-            // Mapear el rol correctamente
-            const rolMap = {
-                'Administrador': 'admin',
-                'Admin': 'admin',
-                'Gerente': 'gerente',
-                'Empleado': 'empleado'
-            };
+            // **AQUÍ ESTÁ EL PROBLEMA - FALTA APLICAR RESTRICCIONES PARA GERENTE EN EDICIÓN**
             
+            // Verificar si el usuario actual es gerente (sin permisos de admin)
+            const esGerente = window.userPermissions && 
+                             window.userPermissions.gerente === true && 
+                             !window.userPermissions.admin && 
+                             !window.userPermissions.superuser;
+            
+            console.log("¿Es gerente?", esGerente);
+            
+            // MANEJO DEL ROL - CON RESTRICCIONES PARA GERENTE
             const rolSelect = document.getElementById('rol');
-            const normalizedRole = user.rol.trim();
-            const rolValue = rolMap[normalizedRole] || normalizedRole.toLowerCase();
             
-            console.log(`🔑 Rol original: "${user.rol}", normalizado: "${rolValue}"`);
-            
-            // Asegurar que exista el campo oculto para el rol
-            let hiddenRolField = document.getElementById('hidden_rol');
-            if (!hiddenRolField) {
-                hiddenRolField = document.createElement('input');
-                hiddenRolField.type = 'hidden';
-                hiddenRolField.id = 'hidden_rol';
-                hiddenRolField.name = 'hidden_rol';
-                document.getElementById('userForm').appendChild(hiddenRolField);
-            }
-            
-            // Establecer el valor del campo oculto con el rol actual
-            hiddenRolField.value = rolValue;
-            console.log(`🔒 Campo oculto de rol establecido: "${rolValue}"`);
-            
-            // Establecer el valor en el select visible y crear la opción si no existe
-            if (rolSelect) {
+            if (esGerente) {
+                // Si es gerente, FORZAR a mostrar solo "Empleado"
+                console.log("APLICANDO RESTRICCIÓN: Gerente solo puede editar como empleado");
+                rolSelect.innerHTML = '<option value="empleado">Empleado</option>';
+                rolSelect.disabled = true;
+                
+                // Asegurar campo oculto
+                let hiddenRolField = document.getElementById('hidden_rol');
+                if (!hiddenRolField) {
+                    hiddenRolField = document.createElement('input');
+                    hiddenRolField.type = 'hidden';
+                    hiddenRolField.id = 'hidden_rol';
+                    hiddenRolField.name = 'hidden_rol';
+                    document.getElementById('userForm').appendChild(hiddenRolField);
+                }
+                hiddenRolField.value = 'empleado';
+                
+            } else {
+                // Para administradores, manejar roles normalmente
+                const rolMap = {
+                    'Administrador': 'admin',
+                    'Admin': 'admin',
+                    'Gerente': 'gerente',
+                    'Empleado': 'empleado'
+                };
+                
+                const normalizedRole = user.rol.trim();
+                const rolValue = rolMap[normalizedRole] || normalizedRole.toLowerCase();
+                
+                // Asegurar que exista el campo oculto para el rol
+                let hiddenRolField = document.getElementById('hidden_rol');
+                if (!hiddenRolField) {
+                    hiddenRolField = document.createElement('input');
+                    hiddenRolField.type = 'hidden';
+                    hiddenRolField.id = 'hidden_rol';
+                    hiddenRolField.name = 'hidden_rol';
+                    document.getElementById('userForm').appendChild(hiddenRolField);
+                }
+                
+                hiddenRolField.value = rolValue;
+                
                 // Verificar si la opción ya existe en el select
                 const optionExists = Array.from(rolSelect.options).some(option => 
                     option.value.toLowerCase() === rolValue.toLowerCase()
@@ -81,38 +104,16 @@ async function editUser(userId) {
                     rolSelect.add(newOption);
                     rolSelect.value = rolValue;
                 }
-                
-                console.log(`🖊️ Select de rol establecido a: "${rolSelect.value}"`);
-                
-                // Configurar si el select debe estar deshabilitado basado en permisos
-                const isAdminUser = normalizedRole === 'Administrador' || normalizedRole === 'Admin';
-                const canEditAdmins = window.userPermissions && window.userPermissions.superuser === true;
-                
-                rolSelect.disabled = isAdminUser && !canEditAdmins;
-                
-                if (rolSelect.disabled) {
-                    rolSelect.classList.add('disabled-select');
-                    console.log("🔒 Campo de rol deshabilitado - usando campo oculto para preservar valor");
-                } else {
-                    rolSelect.classList.remove('disabled-select');
-                }
-                
-                // Agregar evento para sincronizar con campo oculto
-                rolSelect.addEventListener('change', function() {
-                    if (hiddenRolField) {
-                        hiddenRolField.value = this.value;
-                        console.log(`🔄 Campo oculto actualizado a: "${hiddenRolField.value}"`);
-                    }
-                });
             }
             
-            // Cargar sucursales y seleccionar la actual
+            // Cargar sucursales con restricciones
             await cargarSucursalesParaUsuario();
+            
+            // Seleccionar la sucursal actual del usuario
             const sucursalSelect = document.getElementById('sucursal');
-            if (sucursalSelect && user.sucursal) {
-                // Intentar seleccionar la sucursal actual del usuario
+            if (sucursalSelect && user.sucursal_id) {
                 for (const option of sucursalSelect.options) {
-                    if (option.value == user.sucursal) {
+                    if (option.value == user.sucursal_id) {
                         option.selected = true;
                         break;
                     }
@@ -133,30 +134,20 @@ async function editUser(userId) {
 function showAddUserModal() {
     // Asegurar que existe el campo userId
     if (!document.getElementById('userId')) {
-        const hiddenInput = document.createElement('input');
-        hiddenInput.type = 'hidden';
-        hiddenInput.id = 'userId';
-        hiddenInput.name = 'userId';
-        hiddenInput.value = '';
-        
-        const form = document.getElementById('userForm');
-        if (form) {
-            form.appendChild(hiddenInput);
-        }
+        const hiddenField = document.createElement('input');
+        hiddenField.type = 'hidden';
+        hiddenField.id = 'userId';
+        hiddenField.name = 'userId';
+        document.getElementById('userForm')?.appendChild(hiddenField);
     }
     
     // Asegurar que existe el campo hidden_rol
     if (!document.getElementById('hidden_rol')) {
-        const hiddenRolInput = document.createElement('input');
-        hiddenRolInput.type = 'hidden';
-        hiddenRolInput.id = 'hidden_rol';
-        hiddenRolInput.name = 'hidden_rol';
-        hiddenRolInput.value = 'empleado'; // Valor por defecto
-        
-        const form = document.getElementById('userForm');
-        if (form) {
-            form.appendChild(hiddenRolInput);
-        }
+        const hiddenRolField = document.createElement('input');
+        hiddenRolField.type = 'hidden';
+        hiddenRolField.id = 'hidden_rol';
+        hiddenRolField.name = 'hidden_rol';
+        document.getElementById('userForm')?.appendChild(hiddenRolField);
     }
     
     const modal = document.getElementById('userModal');
@@ -172,36 +163,41 @@ function showAddUserModal() {
             form.reset();
             userIdField.value = '';
             
-            // Actualizar también el campo oculto del rol
-            const hiddenRolField = document.getElementById('hidden_rol');
-            if (hiddenRolField) {
+            // RESTRICCIÓN: Si es gerente, restringir el selector de rol a "Empleado" únicamente
+            const esGerente = window.userPermissions && 
+                             window.userPermissions.gerente === true && 
+                             !window.userPermissions.admin && 
+                             !window.userPermissions.superuser;
+    
+            console.log("¿Es gerente al crear usuario?", esGerente);
+    
+            const rolSelect = document.getElementById('rol');
+            if (rolSelect && esGerente) {
+                console.log("APLICANDO RESTRICCIÓN: Gerente solo puede crear empleados");
+                
+                // Limpiar opciones existentes y agregar solo empleado
+                rolSelect.innerHTML = '<option value="empleado">Empleado</option>';
+                rolSelect.disabled = true;
+                
+                // Actualizar también el campo oculto del rol
+                let hiddenRolField = document.getElementById('hidden_rol');
+                if (!hiddenRolField) {
+                    hiddenRolField = document.createElement('input');
+                    hiddenRolField.type = 'hidden';
+                    hiddenRolField.id = 'hidden_rol';
+                    hiddenRolField.name = 'hidden_rol';
+                    document.getElementById('userForm').appendChild(hiddenRolField);
+                }
                 hiddenRolField.value = 'empleado';
             }
-            
-            // Configurar opciones de rol según permisos y actualizar el campo oculto
-            const rolSelect = document.getElementById('rol');
-            if (rolSelect) {
-                rolSelect.addEventListener('change', function() {
-                    const hiddenRolField = document.getElementById('hidden_rol');
-                    if (hiddenRolField) {
-                        hiddenRolField.value = this.value;
-                        console.log("Campo oculto de rol actualizado a:", this.value);
-                    }
-                });
-                
-                // Continuar con la configuración normal...
-            }
-            
-            // Resto de la configuración...
         }
         
-        // Cargar sucursales disponibles
+        // Cargar sucursales - La API ya filtra según permisos del usuario
         cargarSucursalesParaUsuario();
         
         modal.style.display = 'flex';
     } else {
-        console.error("No se pudo encontrar modal, formulario o campo userId");
-        showNotification("Error al abrir el formulario de usuario", "error");
+        console.error("Error: No se encontraron elementos necesarios para el modal");
     }
 }
 
@@ -431,71 +427,76 @@ function validateUserForm() {
 async function cargarSucursalesParaUsuario() {
     try {
         console.log("🔄 Solicitando sucursales al servidor...");
+        console.log("Estado de permisos:", window.userPermissions);
+        
         // Usar la API específica para sucursales de usuario en lugar de la genérica
         const response = await fetch('/api/sucursales-para-usuario/');
         const data = await response.json();
         
         if (data.status === 'success') {
             const sucursalSelect = document.getElementById('sucursal');
-            const userId = document.getElementById('userId').value;
             
             if (sucursalSelect) {
                 sucursalSelect.innerHTML = '<option value="">Seleccionar sucursal</option>';
                 
                 // Verificar que data.sucursales existe y es un array
                 if (Array.isArray(data.sucursales)) {
-                    console.log(`📋 Cargando ${data.sucursales.length} sucursales`);
+                    console.log(`📋 Cargando ${data.sucursales.length} sucursales:`, data.sucursales);
                     
-                    data.sucursales.forEach(sucursal => {
-                        const option = document.createElement('option');
-                        option.value = sucursal.id;
-                        option.textContent = sucursal.nombre;
+                    // Es gerente puro (sin permisos de admin)
+                    const esGerente = window.userPermissions && 
+                                     window.userPermissions.gerente === true && 
+                                     !window.userPermissions.admin && 
+                                     !window.userPermissions.superuser;
+                    
+                    // Si es gerente siempre debe preseleccionar la sucursal,
+                    // independiente de cuántas tenga
+                    if (esGerente && data.sucursales.length > 0) {
+                        // Preseleccionar siempre la primera sucursal para gerentes
+                        const firstSucursal = data.sucursales[0];
                         
-                        // Si estamos editando un usuario y la sucursal coincide, seleccionarla
-                        if (userId && sucursal.id === data.sucursal_actual) {
+                        // Si hay una sola sucursal, mostrar solo esa
+                        if (data.sucursales.length === 1) {
+                            sucursalSelect.innerHTML = ''; // Limpiar la opción "Seleccionar sucursal"
+                            const option = document.createElement('option');
+                            option.value = firstSucursal.id;
+                            option.textContent = firstSucursal.nombre;
                             option.selected = true;
+                            sucursalSelect.appendChild(option);
+                            sucursalSelect.disabled = true; // Deshabilitar el selector
+                            console.log(`✅ Única sucursal seleccionada: ${firstSucursal.nombre}`);
+                        } else {
+                            // Si hay varias, agregar todas pero preseleccionar la primera
+                            data.sucursales.forEach((sucursal, index) => {
+                                const option = document.createElement('option');
+                                option.value = sucursal.id;
+                                option.textContent = sucursal.nombre;
+                                if (index === 0) {
+                                    option.selected = true;
+                                }
+                                sucursalSelect.appendChild(option);
+                            });
+                            console.log(`✅ Primera sucursal preseleccionada de ${data.sucursales.length}`);
                         }
-                        
-                        sucursalSelect.appendChild(option);
-                    });
+                    } else {
+                        // Para administradores, mostrar todas sin preseleccionar
+                        data.sucursales.forEach(sucursal => {
+                            const option = document.createElement('option');
+                            option.value = sucursal.id;
+                            option.textContent = sucursal.nombre;
+                            sucursalSelect.appendChild(option);
+                        });
+                    }
                     
                     console.log("✅ Sucursales cargadas correctamente");
                 } else {
                     console.error("❌ Error: data.sucursales no es un array", data);
-                    sucursalSelect.innerHTML += '<option value="" disabled>No hay sucursales disponibles</option>';
                 }
-            } else {
-                console.error("❌ Select de sucursales no encontrado en el DOM");
             }
-        } else {
-            console.error("❌ Error al cargar sucursales:", data.message || "Error desconocido");
-            showNotification("No se pudieron cargar las sucursales", "error");
         }
     } catch (error) {
         console.error('❌ Error en la solicitud de sucursales:', error);
-        // Fallback: Intentar obtener sucursales de la API general
-        try {
-            console.log("🔄 Intentando obtener sucursales de la API general...");
-            const fallbackResponse = await fetch('/sucursales/');
-            const fallbackData = await fallbackResponse.json();
-            
-            if (fallbackData.status === 'success') {
-                const sucursalSelect = document.getElementById('sucursal');
-                
-                if (sucursalSelect) {
-                    sucursalSelect.innerHTML = '<option value="">Seleccionar sucursal</option>';
-                    
-                    fallbackData.sucursales.forEach(sucursal => {
-                        sucursalSelect.innerHTML += `<option value="${sucursal.id}">${sucursal.nombre}</option>`;
-                    });
-                    
-                    console.log("✅ Sucursales cargadas correctamente (fallback)");
-                }
-            }
-        } catch (fallbackError) {
-            console.error('❌ Error total al cargar sucursales:', fallbackError);
-            showNotification("Error al cargar sucursales", "error");
-        }
+        showNotification("Error al cargar las sucursales", "error");
     }
 }
 
@@ -559,32 +560,20 @@ window.debugUserForm = debugUserForm;
 function showAddUserModal() {
     // Asegurar que existe el campo userId
     if (!document.getElementById('userId')) {
-        const hiddenInput = document.createElement('input');
-        hiddenInput.type = 'hidden';
-        hiddenInput.id = 'userId';
-        hiddenInput.name = 'userId';
-        hiddenInput.value = '';
-        
-        const form = document.getElementById('userForm');
-        if (form) {
-            form.appendChild(hiddenInput);
-            console.log("Campo userId creado dinámicamente");
-        }
+        const hiddenField = document.createElement('input');
+        hiddenField.type = 'hidden';
+        hiddenField.id = 'userId';
+        hiddenField.name = 'userId';
+        document.getElementById('userForm')?.appendChild(hiddenField);
     }
     
     // Asegurar que existe el campo hidden_rol
     if (!document.getElementById('hidden_rol')) {
-        const hiddenRolInput = document.createElement('input');
-        hiddenRolInput.type = 'hidden';
-        hiddenRolInput.id = 'hidden_rol';
-        hiddenRolInput.name = 'hidden_rol';
-        hiddenRolInput.value = 'empleado'; // Valor por defecto
-        
-        const form = document.getElementById('userForm');
-        if (form) {
-            form.appendChild(hiddenRolInput);
-            console.log("Campo hidden_rol creado dinámicamente");
-        }
+        const hiddenRolField = document.createElement('input');
+        hiddenRolField.type = 'hidden';
+        hiddenRolField.id = 'hidden_rol';
+        hiddenRolField.name = 'hidden_rol';
+        document.getElementById('userForm')?.appendChild(hiddenRolField);
     }
     
     const modal = document.getElementById('userModal');
@@ -600,36 +589,41 @@ function showAddUserModal() {
             form.reset();
             userIdField.value = '';
             
-            // Actualizar también el campo oculto del rol
-            const hiddenRolField = document.getElementById('hidden_rol');
-            if (hiddenRolField) {
+            // RESTRICCIÓN: Si es gerente, restringir el selector de rol a "Empleado" únicamente
+            const esGerente = window.userPermissions && 
+                             window.userPermissions.gerente === true && 
+                             !window.userPermissions.admin && 
+                             !window.userPermissions.superuser;
+    
+            console.log("¿Es gerente al crear usuario?", esGerente);
+    
+            const rolSelect = document.getElementById('rol');
+            if (rolSelect && esGerente) {
+                console.log("APLICANDO RESTRICCIÓN: Gerente solo puede crear empleados");
+                
+                // Limpiar opciones existentes y agregar solo empleado
+                rolSelect.innerHTML = '<option value="empleado">Empleado</option>';
+                rolSelect.disabled = true;
+                
+                // Actualizar también el campo oculto del rol
+                let hiddenRolField = document.getElementById('hidden_rol');
+                if (!hiddenRolField) {
+                    hiddenRolField = document.createElement('input');
+                    hiddenRolField.type = 'hidden';
+                    hiddenRolField.id = 'hidden_rol';
+                    hiddenRolField.name = 'hidden_rol';
+                    document.getElementById('userForm').appendChild(hiddenRolField);
+                }
                 hiddenRolField.value = 'empleado';
             }
-            
-            // Configurar opciones de rol según permisos y actualizar el campo oculto
-            const rolSelect = document.getElementById('rol');
-            if (rolSelect) {
-                rolSelect.addEventListener('change', function() {
-                    const hiddenRolField = document.getElementById('hidden_rol');
-                    if (hiddenRolField) {
-                        hiddenRolField.value = this.value;
-                        console.log("Campo oculto de rol actualizado a:", this.value);
-                    }
-                });
-                
-                // Continuar con la configuración normal...
-            }
-            
-            // Resto de la configuración...
         }
         
-        // Cargar sucursales disponibles
+        // Cargar sucursales - La API ya filtra según permisos del usuario
         cargarSucursalesParaUsuario();
         
         modal.style.display = 'flex';
     } else {
-        console.error("No se pudo encontrar modal, formulario o campo userId");
-        showNotification("Error al abrir el formulario de usuario", "error");
+        console.error("Error: No se encontraron elementos necesarios para el modal");
     }
     
     // Agregar depuración después de mostrar el modal
@@ -658,6 +652,23 @@ window.debugRolFields = function() {
     console.groupEnd();
     
     return "Diagnóstico completado - revisa la consola";
+};
+
+// Función de debugging para verificar permisos
+window.debugPermisos = function() {
+    console.group("🔍 DEBUG PERMISOS");
+    console.log("window.userPermissions:", window.userPermissions);
+    
+    if (window.userPermissions) {
+        const esGerente = window.userPermissions.gerente === true && 
+                         !window.userPermissions.admin && 
+                         !window.userPermissions.superuser;
+        console.log("¿Es gerente puro?", esGerente);
+        console.log("admin:", window.userPermissions.admin);
+        console.log("gerente:", window.userPermissions.gerente);
+        console.log("superuser:", window.userPermissions.superuser);
+    }
+    console.groupEnd();
 };
 
 // Exportar funciones que podrían no estar disponibles globalmente
@@ -691,3 +702,20 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }, 1000);
 });
+
+// **AGREGAR AL FINAL DEL ARCHIVO:**
+// Marcar que usuarios_form.js se ha cargado
+window.usuarios_form_loaded = true;
+
+// **IMPORTANTE: NO sobrescribir si ya existe una implementación específica**
+if (!window.showAddUserModal || typeof window.showAddUserModal_generic === 'undefined') {
+    window.showAddUserModal_generic = window.showAddUserModal; // Guardar versión genérica
+}
+
+if (!window.editUser || typeof window.editUser_generic === 'undefined') {
+    window.editUser_generic = window.editUser; // Guardar versión genérica
+}
+
+if (!window.handleUserSubmit || typeof window.handleUserSubmit_generic === 'undefined') {
+    window.handleUserSubmit_generic = window.handleUserSubmit; // Guardar versión genérica
+}
