@@ -20,9 +20,19 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'tu-clave-secreta'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True  # Set to True during development to serve static files
+# Cambia esto a False cuando estés en producción
+DEBUG = False  
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '*']  # Cambia esto según tu dominio
+# Prioriza hosts locales al principio
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'punto1208.com', '31.97.42.133', 'www.punto1208.com']  # Cambia esto según tu dominio
+
+# Si vas a usar HTTPS (recomendado en producción)
+SECURE_SSL_REDIRECT = True
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
+SECURE_HSTS_SECONDS = 3600  # 1 hora
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+SECURE_HSTS_PRELOAD = True
 
 # Application definition
 INSTALLED_APPS = [
@@ -122,3 +132,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 LOGIN_URL = '/'  # Redirige a la página de login si no está autenticado
 LOGIN_REDIRECT_URL = '/dashboard/'  # Redirige aquí después del login exitoso
+
+# Esta configuración ayuda para desarrollo local con Django runserver
+INTERNAL_IPS = [
+    '127.0.0.1',
+]
